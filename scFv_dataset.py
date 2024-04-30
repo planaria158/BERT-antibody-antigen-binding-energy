@@ -18,9 +18,10 @@ class scFv_Dataset(Dataset):
     """
     Emits batches of amino acid sequences and binding energies
     """
-    def __init__(self, config, csv_file_path, skiprows=0):  
+    def __init__(self, config, csv_file_path, skiprows=0, inference=False):  
         super().__init__()
         self.config = config
+        self.inference = inference
         print('reading the data from:', csv_file_path)
         self.df = pd.read_csv(csv_file_path, skiprows=skiprows)
         
@@ -48,10 +49,9 @@ class scFv_Dataset(Dataset):
     """ Returns data, mask pairs used for Masked Language Model training """
     def __getitem__(self, idx):
         seq = self.df.loc[idx, 'sequence_a']
-        affinity = self.df.loc[idx, 'Kd']
+        affinity = self.df.loc[idx, 'Kd'] if self.inference == False else 0.0
         assert not math.isnan(affinity), 'affinity is nan'
-        assert affinity >= 0.0, 'affinity is negative'
-        # assert len(seq) < self.config['block_size'], 'sequence is too short'
+        assert affinity >= 0.0, 'affinity cannot be negative'
 
         # get a randomly located block_size-1 substring from the sequence
         # '-1' so we can prepend the CLS token to the start of the encoded string
@@ -78,19 +78,15 @@ class scFv_Dataset(Dataset):
 
         mask = None
         if self.config['mask_prob'] > 0:
-            # dix now looks like: [[CLS], x1, x2, x3, ..., xN, [PAD], [PAD], ..., [PAD]]
+            # dix looks like: [[CLS], x1, x2, x3, ..., xN, [PAD], [PAD], ..., [PAD]]
             # Never mask CLS or PAD tokens
 
             # get number of tokens to mask
-            # n_pred = max(1, int(round(self.config['block_size']*self.config['mask_prob'])))
             n_pred = max(1, int(round((last_aa - first_aa)*self.config['mask_prob'])))
-            # print('n_pred length:', n_pred, ', last_aa - first_aa:', last_aa - first_aa)
 
             # indices of the tokens that will be masked (a random selection of n_pred of the tokens)
-            # masked_idx = torch.randperm(self.config['block_size']-1, dtype=torch.long, )[:n_pred]
             masked_idx = torch.randperm(last_aa-1, dtype=torch.long, )[:n_pred]
             masked_idx += 1  # so we never mask the CLS token
-            # print('masked_idx:', masked_idx)
 
             mask = torch.zeros_like(dix)
 

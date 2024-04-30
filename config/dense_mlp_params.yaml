@@ -4,7 +4,7 @@ model_params:
   mask_prob: 0.0
   mlp_dropout : 0.2
   accelerator : 'gpu'
-  devices: 2
+  devices: 1
   batch_size: 2048
   num_workers: 5
   grad_norm_clip : 1.0
@@ -12,6 +12,8 @@ model_params:
   log_dir : './lightning_logs/dense_mlp_model/'
   train_data_path: '/home/mark/dev/aAlphaBio-Homework/data/train_set.csv'
   test_data_path:  '/home/mark/dev/aAlphaBio-Homework/data/val_set.csv'
+
+  checkpoint_name: '/home/mark/dev/aAlphaBio-Homework/lightning_logs/dense_mlp_model/training_run_1/checkpoints/epoch=8642-step=60500.ckpt'
 
   learning_rate : 0.0001
   lr_gamma: 0.9990     # for exponential learning rate decay

@@ -1,4 +1,7 @@
 
+import pickle as pk
+from pathlib import Path
+import os
 import torch
 from torch import nn
 from pytorch_lightning.core import LightningModule
@@ -89,6 +92,23 @@ class DenseMLP_Lightning(LightningModule):
         val_loss = self.common_forward(batch, batch_idx)
         self.log_dict({"val_loss": val_loss}, on_epoch=True, on_step=True, prog_bar=True, sync_dist=True)
         return val_loss
+    
+    def on_predict_start(self):
+        self.preds = []
+
+    def predict_step(self, batch, batch_idx):
+        y_hat = self.forward(batch[0].float())
+        self.preds.extend(y_hat.cpu().numpy().tolist())
+        return
+
+    def on_predict_end(self):
+        # save the preds to file
+        path = Path('./inference')
+        path.mkdir(parents=True, exist_ok=True)
+        filename = os.path.join(path, 'preds_dense_mlp.pkl')
+        print('saving', len(self.preds), 'preds to:', filename)
+        pk.dump(self.preds, open(filename, 'wb'))
+        return 
 
     def configure_optimizers(self):
         lr = self.config['learning_rate']

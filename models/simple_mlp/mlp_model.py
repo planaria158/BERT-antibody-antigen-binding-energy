@@ -1,4 +1,7 @@
 
+import pickle as pk
+from pathlib import Path
+import os
 import torch
 from torch import nn
 from pytorch_lightning.core import LightningModule
@@ -74,17 +77,34 @@ class MLP_Lightning(LightningModule):
         y_hat = self.model(x)
         loss = self.criteriion(y_hat, y)
         # torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.config['grad_norm_clip'])
-        return loss
+        return loss, y_hat, y
 
     def training_step(self, batch, batch_idx):
-        loss = self.common_forward(batch, batch_idx)
+        loss, _, _ = self.common_forward(batch, batch_idx)
         self.log_dict({"loss": loss}, on_epoch=True, on_step=True, prog_bar=True, sync_dist=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
-        val_loss = self.common_forward(batch, batch_idx)
+        val_loss, _, _ = self.common_forward(batch, batch_idx)
         self.log_dict({"val_loss": val_loss}, on_epoch=True, on_step=True, prog_bar=True, sync_dist=True)
         return val_loss
+    
+    def on_predict_start(self):
+        self.preds = []
+
+    def predict_step(self, batch, batch_idx):
+        y_hat = self.forward(batch[0].float())
+        self.preds.extend(y_hat.cpu().numpy().tolist())
+        return
+
+    def on_predict_end(self):
+        # save the preds to file
+        path = Path('./inference')
+        path.mkdir(parents=True, exist_ok=True)
+        filename = os.path.join(path, 'preds_mlp.pkl')
+        print('saving', len(self.preds), 'preds to:', filename)
+        pk.dump(self.preds, open(filename, 'wb'))
+        return 
 
     def configure_optimizers(self):
         lr = self.config['learning_rate']
