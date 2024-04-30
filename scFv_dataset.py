@@ -47,8 +47,8 @@ class scFv_Dataset(Dataset):
 
     """ Returns data, mask pairs used for Masked Language Model training """
     def __getitem__(self, idx):
-        seq = self.df.loc[idx, 'Sequence']
-        affinity = self.df.loc[idx, 'Pred_affinity']
+        seq = self.df.loc[idx, 'sequence_a']
+        affinity = self.df.loc[idx, 'Kd']
         assert not math.isnan(affinity), 'affinity is nan'
         assert affinity >= 0.0, 'affinity is negative'
         # assert len(seq) < self.config['block_size'], 'sequence is too short'
