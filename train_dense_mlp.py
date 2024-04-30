@@ -12,7 +12,7 @@ from models.dense_mlp.dense_mlp import DenseMLP_Lightning
 def train(args):
 
     # Read the config
-    config_path = './config/default_dense_mlp_params.yaml'  
+    config_path = './config/dense_mlp_params.yaml'  
     with open(config_path, 'r') as file:
         try:
             config = yaml.safe_load(file)
@@ -77,7 +77,7 @@ def train(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Arguments for dense_mlp_model')
     parser.add_argument('--config', dest='config_path',
-                        default='config/default_dense_mlp_params.yaml', type=str)
+                        default='config/dense_mlp_params.yaml', type=str)
     args = parser.parse_args()
     train(args)
 

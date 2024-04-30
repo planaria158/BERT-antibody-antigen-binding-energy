@@ -43,7 +43,7 @@ class DenseMLP(nn.Module):
 
         # For regression, the very last Layer has no normalization or activation
         print('making dense mlp layer in_dim, out_dim:', in_dim, 1)
-        layer = Layer((self.in_dim + self.out_dim), 1, config['mlp_dropout'], normalize=False, activation=False)
+        layer = Layer((self.in_dim + self.out_dim), 1, normalize=False, activation=False)
         self.net.append(layer)
 
     def forward(self, x_in):
