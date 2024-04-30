@@ -3,7 +3,7 @@ import yaml
 import argparse
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
-from scFv_dataset import scFv_Dataset as dataset
+from datasets.scFv_dataset import scFv_Dataset as dataset
 from models.dense_mlp.dense_mlp import DenseMLP_Lightning
 
 #----------------------------------------------------------------------
