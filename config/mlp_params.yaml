@@ -24,5 +24,7 @@ model_params:
   mode: 'min'
   log_every_nsteps: 10
 
+  inference_results_folder: './inference_results/'
+
   seed : 3407
 

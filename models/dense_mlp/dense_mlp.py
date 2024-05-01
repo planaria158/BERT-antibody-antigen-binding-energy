@@ -2,6 +2,7 @@
 import pickle as pk
 from pathlib import Path
 import os
+import time
 import torch
 from torch import nn
 from pytorch_lightning.core import LightningModule
@@ -95,20 +96,28 @@ class DenseMLP_Lightning(LightningModule):
     
     def on_predict_start(self):
         self.preds = []
+        self.y = []
 
     def predict_step(self, batch, batch_idx):
         y_hat = self.forward(batch[0].float())
+        self.y.extend(batch[1].cpu().numpy().tolist())
         self.preds.extend(y_hat.cpu().numpy().tolist())
         return
 
     def on_predict_end(self):
         # save the preds to file
-        path = Path('./inference')
+        path = Path(self.config['inference_results_folder'])
         path.mkdir(parents=True, exist_ok=True)
-        filename = os.path.join(path, 'preds_dense_mlp.pkl')
+        filename = os.path.join(path, 'preds_dense_mlp_' + str(time.time()) + '.pkl')      
         print('saving', len(self.preds), 'preds to:', filename)
         pk.dump(self.preds, open(filename, 'wb'))
+
+        filename = os.path.join(path, 'y_dense_mlp_' + str(time.time()) + '.pkl')      
+        print('saving', len(self.y), 'y values to:', filename)
+        pk.dump(self.y, open(filename, 'wb'))
+
         return 
+
 
     def configure_optimizers(self):
         lr = self.config['learning_rate']
