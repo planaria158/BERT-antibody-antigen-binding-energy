@@ -1,17 +1,24 @@
 
 model_params:
-  block_size: 265    # can fit the max of 247 amino acids + CLS token + PAD tokens
-                     # and be reshaped into a (46,46) single-channel tensor of 1's and 0's
+  block_size: 288    # can fit the max of 247 amino acids + CLS token + PAD tokens
+                     # and be reshaped into a (48,48) single-channel tensor of 1's and 0's
+                     # (48,48) needed to allow for 4x4 patches fed into the ViT model
   mask_prob: 0.0
-  image_shape: [46, 46] # 46x46 pixel images
-  mlp_dropout : 0.2
-  accelerator : 'mps' # cpu, gpu, mps (macbook M2 chip)
+
+  image_shape: [48, 48] # 46x46 pixel images
+  patch_dim: 4          # 4x4 pixel patches
+  num_heads: 8 
+  num_layers: 6
+  dim: 256  #512
+  dropout: 0.2
+
+  accelerator : 'mps' # cpu, gpu, mps(macbook M2 chip)
   devices: 1
-  batch_size: 256
+  batch_size: 128
   num_workers: 10
   grad_norm_clip : 1.0
   num_epochs : 10000
-  log_dir : './lightning_logs/cnn_model/'
+  log_dir : './lightning_logs/vit_model/'
   train_data_path: '/Users/markthompson/Documents/dev/a-alphaBio-homework/data/train_set.csv'
   test_data_path:  '/Users/markthompson/Documents/dev/a-alphaBio-homework/data/val_set.csv'
 

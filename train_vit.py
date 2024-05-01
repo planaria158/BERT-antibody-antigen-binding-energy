@@ -4,15 +4,15 @@ import argparse
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 from datasets.cnn_dataset import CNN_Dataset as dataset
-from models.cnn.cnn import CNN_Lightning
+from models.vit.vit import VIT_Lightning
 
 #----------------------------------------------------------------------
-# This file is for training the simple CNN model
+# This file is for training the simple VIT model
 #----------------------------------------------------------------------
 def train(args):
 
     # Read the config
-    config_path = './config/cnn_params.yaml'  
+    config_path = './config/vit_params.yaml'  
     with open(config_path, 'r') as file:
         try:
             config = yaml.safe_load(file)
@@ -45,7 +45,7 @@ def train(args):
     #----------------------------------------------------------
     # Model
     #----------------------------------------------------------
-    model = CNN_Lightning(config) 
+    model = VIT_Lightning(config) 
     total_params = sum(param.numel() for param in model.parameters())
     print('Model has:', int(total_params), 'parameters')
 
@@ -77,9 +77,9 @@ def train(args):
     
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Arguments for cnn_model')
+    parser = argparse.ArgumentParser(description='Arguments for vit_model')
     parser.add_argument('--config', dest='config_path',
-                        default='config/cnn_params.yaml', type=str)
+                        default='config/vit_params.yaml', type=str)
     args = parser.parse_args()
     train(args)
 
