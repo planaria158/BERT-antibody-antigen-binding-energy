@@ -4,27 +4,28 @@ model_params:
   mask_prob: 0.0
   mlp_dropout : 0.2
   accelerator : 'gpu'
-  devices: 1
+  devices: 2
   batch_size: 2048
   num_workers: 5
   grad_norm_clip : 1.0
   num_epochs : 10000
-  log_dir : './lightning_logs/mlp_model/'
+  log_dir : './lightning_logs/residual_mlp_model/'
   train_data_path: '/home/mark/dev/aAlphaBio-Homework/data/train_set.csv'
   test_data_path:  '/home/mark/dev/aAlphaBio-Homework/data/val_set.csv'
 
-  checkpoint_name: '/home/mark/dev/aAlphaBio-Homework/lightning_logs/mlp_model/training_run_1/checkpoints/epoch=4799-step=33600.ckpt'
+  checkpoint_name: None #'/home/mark/dev/aAlphaBio-Homework/lightning_logs/dense_mlp_model/training_run_1/checkpoints/epoch=8642-step=60500.ckpt'
+
   learning_rate : 0.0001
   lr_gamma: 0.9990     # for exponential learning rate decay
   betas : [0.9, 0.95]
 
   checkpoint_every_n_train_steps : 100
-  save_top_k : 1
+  save_top_k : 5
   monitor: 'loss'
   mode: 'min'
   log_every_nsteps: 10
 
   inference_results_folder: './inference_results/'
-
+  
   seed : 3407
 

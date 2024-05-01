@@ -1,6 +1,6 @@
 
 model_params:
-  block_size: 247    # 246 amino acids + CLS token (which hopefully is vestigal for this model)
+  block_size: 248    # max of 247 amino acids + CLS token (which hopefully is vestigal for this model)
   mask_prob: 0.0
   mlp_dropout : 0.2
   accelerator : 'gpu'
