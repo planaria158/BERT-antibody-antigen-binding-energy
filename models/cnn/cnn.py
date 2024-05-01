@@ -12,27 +12,27 @@ from pytorch_lightning.core import LightningModule
 # 2D B&W images (single channel)
 #----------------------------------------------------------
 class CNN(nn.Module):
-    def __init__(self, config, block_size):
+    def __init__(self, config):
         super(CNN, self).__init__()
         self.config = config
-        self.block_size = block_size  ???
         self.conv1 = nn.Conv2d(1,    32, kernel_size=3, stride=1, padding=1)
         self.conv2 = nn.Conv2d(32,   64, kernel_size=3, stride=1, padding=1)
         self.conv3 = nn.Conv2d(64,  128, kernel_size=3, stride=1, padding=1)
         self.conv4 = nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1)
-        self.fc1 = nn.Linear(256 * self.block_size * self.block_size, 512)
+        self.fc1 = nn.Linear(256 * 4, 512) # flatten after last conv,pool layer
         self.fc2 = nn.Linear(512, 1)
         self.gelu = nn.GELU()
         self.pool = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
         self.dropout = nn.Dropout(p=0.5)
 
     def forward(self, x):
-        # assuming input image is 46x46
+        # assuming input image is 1x46x46
+        assert(x.shape[2] == 46 and x.shape[3] == 46)
         x = self.pool(self.gelu(self.conv1(x)))  # 23x23
         x = self.pool(self.gelu(self.conv2(x)))  # 11x11
         x = self.pool(self.gelu(self.conv3(x)))  # 5x5
         x = self.pool(self.gelu(self.conv4(x)))  # 2x2
-        x = x.view(-1, 256 * self.block_size * self.block_size)
+        x = x.view(-1, 256 * 4) # flatten after last conv,pool layer
         x = self.gelu(self.fc1(x))
         x = self.dropout(x)
         x = self.fc2(x)
