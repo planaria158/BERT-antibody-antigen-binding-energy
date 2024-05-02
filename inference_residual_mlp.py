@@ -3,15 +3,16 @@ import yaml
 import argparse
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
-from datasets.cnn_dataset import CNN_Dataset as dataset
-from models.vit.vit import VIT_Lightning
-
+from datasets.scFv_dataset import scFv_Dataset as dataset
+from models.residual_mlp.residual_mlp import ResidualMLP_Lightning 
 #----------------------------------------------------------------------
-# This file is for training the simple VIT model
+# This file is for running inference on the Vision Transformer
+# model with the scFv dataset
 #----------------------------------------------------------------------
 def train(args):
+
     # Read the config
-    config_path = './config/vit_params.yaml'  
+    config_path = './config/residual_mlp_params.yaml'  
     with open(config_path, 'r') as file:
         try:
             config = yaml.safe_load(file)
@@ -22,43 +23,29 @@ def train(args):
     print(config)
     pl.seed_everything(config['seed'])
 
-
     #----------------------------------------------------------
     # Load the dataset
     #----------------------------------------------------------
-    train_data_path = config['train_data_path']  
-    train_dataset = dataset(config, train_data_path)
-    print(train_dataset.__len__())
-    config['vocab_size'] = train_dataset.get_vocab_size()
+    inference_data_path = config['inference_data_path']
+    inference_dataset = dataset(config, inference_data_path, inference=False) #inference=True)
+    print(inference_dataset.__len__())
+    config['vocab_size'] = inference_dataset.get_vocab_size()
     print('config[vocab_size]:', config['vocab_size'], ', config[block_size]:', config['block_size'])
-
-    test_data_path = config['test_data_path'] 
-    test_dataset = dataset(config, test_data_path)
-    print(test_dataset.__len__())
-    
-    train_loader = DataLoader(train_dataset, shuffle=True, pin_memory=True, batch_size=config['batch_size'], 
-                              num_workers=config['num_workers'], persistent_workers=True)
-    test_loader = DataLoader(test_dataset, shuffle=False, pin_memory=True, batch_size=config['batch_size'], 
-                             num_workers=5, persistent_workers=True)
+    inference_loader = DataLoader(inference_dataset, shuffle=False, pin_memory=True, 
+                                  batch_size=config['batch_size'], num_workers=config['num_workers'])
 
     #----------------------------------------------------------
     # Model
     #----------------------------------------------------------
-    model = VIT_Lightning(config) 
+    assert config['checkpoint_name'] != None, 'checkpoint_name is None'
+    print('Loading pre-trained model from:', config['checkpoint_name'])
+    model = ResidualMLP_Lightning.load_from_checkpoint(checkpoint_path=config['checkpoint_name'], config=config)
     total_params = sum(param.numel() for param in model.parameters())
     print('Model has:', int(total_params), 'parameters')
 
     #--------------------------------------------------------------------
-    # Training
+    # Inference
     #--------------------------------------------------------------------
-    checkpoint_callback = pl.callbacks.ModelCheckpoint(
-        save_top_k=config['save_top_k'],
-        every_n_train_steps=config['checkpoint_every_n_train_steps'],
-        save_on_train_epoch_end=True,
-        monitor = config['monitor'],
-        mode = config['mode']
-    )
-
     from lightning.pytorch.loggers import TensorBoardLogger
     logger = TensorBoardLogger(save_dir=os.getcwd(), name=config['log_dir'], default_hp_metric=False)
 
@@ -68,17 +55,15 @@ def train(args):
                          devices=config['devices'],
                          max_epochs=config['num_epochs'],   
                          logger=logger, 
-                         log_every_n_steps=config['log_every_nsteps'], 
-                         callbacks=[checkpoint_callback])   
+                         log_every_n_steps=config['log_every_nsteps'])   
 
-
-    trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=test_loader)
+    trainer.predict(model=model, dataloaders=inference_loader)
     
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Arguments for vit_model')
+    parser = argparse.ArgumentParser(description='Arguments for residual_mlp_model')
     parser.add_argument('--config', dest='config_path',
-                        default='config/vit_params.yaml', type=str)
+                        default='config/residual_mlp_params.yaml', type=str)
     args = parser.parse_args()
     train(args)
 

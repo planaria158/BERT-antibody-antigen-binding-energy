@@ -94,7 +94,7 @@ class MLP_Head(nn.Module):
 # For a 46x46 image, patch_dim = 2, num_patches = 64, dim = 512
 #--------------------------------------------------------------------
 class VIT(nn.Module):
-    def __init__(self, config, img_shape=(46,46)):
+    def __init__(self, config):
         super(VIT, self).__init__()
         patch_dim = config['patch_dim']
         num_heads = config['num_heads'] 
