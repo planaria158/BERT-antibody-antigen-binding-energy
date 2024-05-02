@@ -3,7 +3,7 @@ import yaml
 import argparse
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
-from datasets.cnn_dataset import CNN_Dataset as dataset
+from datasets.cnn_dataset_bw import CNN_Dataset as dataset
 from models.vit.vit import VIT_Lightning
 
 #----------------------------------------------------------------------

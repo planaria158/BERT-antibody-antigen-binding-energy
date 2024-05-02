@@ -3,7 +3,6 @@ import yaml
 import argparse
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
-from datasets.cnn_dataset import CNN_Dataset as dataset
 from models.vit.vit import VIT_Lightning
 
 #----------------------------------------------------------------------
@@ -26,6 +25,11 @@ def train(args):
     #----------------------------------------------------------
     # Load the dataset
     #----------------------------------------------------------
+    if config['image_channels'] == 1:
+        from datasets.cnn_dataset_bw import CNN_Dataset_BW as dataset
+    elif config['image_channels'] == 3:
+        from datasets.cnn_dataset_bgr import CNN_Dataset_BGR as dataset
+
     train_data_path = config['train_data_path']  
     train_dataset = dataset(config, train_data_path)
     print(train_dataset.__len__())

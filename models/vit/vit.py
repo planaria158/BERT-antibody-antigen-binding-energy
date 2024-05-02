@@ -90,8 +90,8 @@ class MLP_Head(nn.Module):
 
 
 #--------------------------------------------------------------------
-# The model
-# For a 46x46 image, patch_dim = 2, num_patches = 64, dim = 512
+# The vision transformer model
+# typical settings: 48x48 image, patch_dim=2, num_patches=144
 #--------------------------------------------------------------------
 class VIT(nn.Module):
     def __init__(self, config):
@@ -103,7 +103,7 @@ class VIT(nn.Module):
         dropout = config['dropout']
         img_shape = config['image_shape']
 
-        self.in_channels = 1 # B&W image
+        self.in_channels = config['image_channels'] 
         self.token_dim = patch_dim * patch_dim * self.in_channels  # length of linearized patchs
         self.dim = dim # The embedding dimension for the Encoder
         self.num_patches = ((img_shape[0]//patch_dim) * (img_shape[0]//patch_dim))

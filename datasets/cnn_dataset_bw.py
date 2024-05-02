@@ -9,7 +9,7 @@ from datasets.scFv_dataset import scFv_Dataset
 # Simple wrapper Dataset to turn output from the scFv dataset
 # into a B&W image for use in a CNN model
 #--------------------------------------------------------
-class CNN_Dataset(Dataset):
+class CNN_Dataset_BW(Dataset):
     """
     Emits 2D B&W images and binding energies
     """
