@@ -21,19 +21,15 @@ class FeedForwardBlock(nn.Module):
         self.block = nn.Sequential(
                      nn.Linear(dim, inner_dim),
                      nn.GELU(),
-                     nn.Dropout(dropout),
                      nn.Linear(inner_dim, dim), 
-                    #  nn.Dropout(dropout)
+                     nn.Dropout(dropout)
             )
-        self.norm = nn.LayerNorm(dim)
 
     def forward(self, x):
-        out = self.norm(x)
-        out = self.block(out)
+        out = self.block(x)
         return out
 
 class AttentionBlock(nn.Module):
-    # def __init__(self, dim, heads = 8, dim_head = 64, dropout = 0.):  
     def __init__(self, dim, heads, dim_head, dropout = 0.):  
         super().__init__()
         inner_dim = dim_head * heads
@@ -46,12 +42,15 @@ class AttentionBlock(nn.Module):
             nn.Linear(inner_dim, dim),
             nn.Dropout(dropout)
         ) if project_out else nn.Identity()
+        self.attn_dropout = nn.Dropout(dropout)
+
 
     def forward(self, x):
         qkv = self.to_qkv(x).chunk(3, dim = -1)
         q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h = self.heads), qkv)
         dots = torch.matmul(q, k.transpose(-1, -2)) * self.scale
         attn = self.attend(dots)
+        attn = self.attn_dropout(attn)
         out = torch.matmul(attn, v)
         out = rearrange(out, 'b h n d -> b n (h d)')
         return self.to_out(out)
@@ -59,12 +58,14 @@ class AttentionBlock(nn.Module):
 class EncoderBlock(nn.Module):
     def __init__(self, dim, num_heads, dropout):
         super().__init__()
-        self.attn_block = AttentionBlock(dim, num_heads, dim_head=64, dropout=dropout)
+        self.norm1 = nn.LayerNorm(dim)
+        self.attn_block = AttentionBlock(dim, num_heads, dim_head=32, dropout=dropout)
+        self.norm2 = nn.LayerNorm(dim)
         self.ff_block = FeedForwardBlock(dim, dropout)
 
     def forward(self, x):
-        x = self.attn_block(x) + x
-        x = self.ff_block(x) + x
+        x = x + self.attn_block(self.norm1(x))
+        x = x + self.ff_block(self.norm2(x)) 
         return x
     
 class TransformerEncoder(nn.Module):
@@ -113,7 +114,7 @@ class VIT(nn.Module):
                                     nn.Linear(self.token_dim, dim))
         self.class_embedding = nn.Parameter(torch.randn(1, 1, dim))
         self.pos_embedding = nn.Parameter(torch.randn(1, self.num_patches + 1, dim))
-        self.dropout_layer = nn.Dropout(dropout)
+        self.emb_dropout = nn.Dropout(p=0.2)
         self.transformer_encoder = TransformerEncoder(num_layers, dim, num_heads, dropout)
         self.mlp_head = MLP_Head(dim, 1)
            
@@ -123,7 +124,7 @@ class VIT(nn.Module):
         class_tokens = repeat(self.class_embedding, '() n d -> b n d', b = b)
         embeddings = torch.cat((class_tokens, patch_emb), dim=1) # [N, 65, dim]
         embeddings += self.pos_embedding[:, :(n + 1)]
-        x = self.dropout_layer(embeddings)
+        x = self.emb_dropout(embeddings)
         x = self.transformer_encoder(x)
         logits = self.mlp_head(x[:, 0, :])  # [N, 1] just apply to the CLS token
         return logits 
