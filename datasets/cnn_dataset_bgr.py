@@ -36,11 +36,10 @@ class CNN_Dataset_BGR(Dataset):
 
         # map encoded sequence to groups
         self.i_to_grp = {self.scFv_dataset.stoi[ch]:group_encodings[i] for ch,i in zip(chars, groups)} 
-        print('i_to_grp:', self.i_to_grp)
 
         # The relative mutation frequence for each amino acid position in the scFv sequences over the entire clean_3 dataset
-        # This fixed-array is 241 elements long.
-        self.rel_mutation_freq = torch.tensor([0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+        # This fixed-array is 241 elements long. (I clipped off the last 5 residues from the 246 residue sequences for the VIT model)
+        self.rel_mutation_freq = torch.tensor([ 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
                                                 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
                                                 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
                                                 0.0000, 0.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 0.7778,
@@ -66,15 +65,12 @@ class CNN_Dataset_BGR(Dataset):
                                                 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
                                                 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
                                                 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
-                                                0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]) #, 0.0000, 0.0000,
-                                                #0.0000, 0.0000, 0.0000])
-        
-        print('len(rel_mutation_freq):', len(self.rel_mutation_freq))
+                                                0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]) 
         
         self.mutation_freq_encoded = self.rel_mutation_freq * 255
-        self.mutation_freq_encoded = torch.floor(self.mutation_freq_encoded).to(torch.long)
-        print(torch.min(self.mutation_freq_encoded), torch.max(self.mutation_freq_encoded))
-        print( self.mutation_freq_encoded[0:10])
+        self.mutation_freq_encoded = torch.ceil(self.mutation_freq_encoded).to(torch.long)
+        print('min mutation freq:', torch.min(self.mutation_freq_encoded), 'max mutation freq:', torch.max(self.mutation_freq_encoded))
+        print('some mutation_freq_encoded values:', self.mutation_freq_encoded[60:70])
         
     def get_vocab_size(self):
         return self.scFv_dataset.vocab_size
@@ -90,8 +86,7 @@ class CNN_Dataset_BGR(Dataset):
 
     def _encode_channel(self, x, shape):
         d = ''.join([self._bin(val) for val in x])
-        # turn d into a list of integers, one for each bit
-        d = [int(x) for x in d]    
+        d = [int(x) for x in d] # turn d into a list of integers, one for each bit
         t = torch.tensor(d[:(shape[0]*shape[1])], dtype=torch.float32) # this is for shape matrix
         t = t.reshape(shape)
         return t
@@ -101,35 +96,27 @@ class CNN_Dataset_BGR(Dataset):
 
         dix, kd = self.scFv_dataset.__getitem__(idx)
 
-        # 50% of the time flip the sequences back-to-front
-        flip = False
-        if random.random() > 0.5:
-            flip = True
-
-        dix = torch.flip(dix, [0]) if flip else dix
-
         # The residue encoding channel
         ch_1 = self._encode_channel(dix, self.img_shape)
 
         # The residue group encoding channel
         dix_grp = torch.tensor([self.i_to_grp[i] for i in dix.numpy().tolist()], dtype=torch.long)
-        dix_grp = torch.flip(dix_grp, [0]) if flip else dix_grp
         ch_2 = self._encode_channel(dix_grp, self.img_shape)
 
         # The mutation frequency channel; anything not an amino acid gets a zero.
         ch3_in = torch.zeros_like(dix)
         # First aa is always position 1 (0 is a CLS token)
         ch3_in[1:len(self.mutation_freq_encoded)+1] = self.mutation_freq_encoded
-        ch3_in = torch.flip(ch3_in, [0]) if flip else ch3_in
         ch_3 = self._encode_channel(ch3_in, self.img_shape)
 
-        # stack the 3 channels into an bgr image
+        # stack the 3 channels into a bgr image
         bgr_img = torch.stack((ch_1, ch_2, ch_3), dim=0) * 255
 
         if self.transform:
-            image = self.transform(bgr_img)
-            # Normalize image [-1, 1]
-            bgr_img = (bgr_img - 127.5)/127.5
+            bgr_img = self.transform(bgr_img)
+            
+        # Normalize image [-1, 1]
+        bgr_img = (bgr_img - 127.5)/127.5
 
 
-        return bgr_img, kd
+        return bgr_img, kd #, ch_1, ch_2, ch_3 

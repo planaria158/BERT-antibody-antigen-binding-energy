@@ -12,7 +12,7 @@ from einops import repeat, rearrange
 
 #----------------------------------------------------------
 # Create a simple Vision Transformer to be used for
-# image regression on 2D B&W images (single channel)
+# regression tasks
 #----------------------------------------------------------
 class FeedForwardBlock(nn.Module):
     def __init__(self, dim, dropout=0., multiplier=4):
@@ -30,7 +30,7 @@ class FeedForwardBlock(nn.Module):
         return out
 
 class AttentionBlock(nn.Module):
-    def __init__(self, dim, heads, dim_head, dropout = 0.):  
+    def __init__(self, dim, heads, dim_head, dropout=0.):  
         super().__init__()
         inner_dim = dim_head * heads
         project_out = not (heads == 1 and dim_head == dim)
@@ -44,7 +44,6 @@ class AttentionBlock(nn.Module):
         ) if project_out else nn.Identity()
         self.attn_dropout = nn.Dropout(dropout)
 
-
     def forward(self, x):
         qkv = self.to_qkv(x).chunk(3, dim = -1)
         q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h = self.heads), qkv)
@@ -56,10 +55,10 @@ class AttentionBlock(nn.Module):
         return self.to_out(out)
 
 class EncoderBlock(nn.Module):
-    def __init__(self, dim, num_heads, dropout):
+    def __init__(self, dim, num_heads, dim_head, dropout):
         super().__init__()
         self.norm1 = nn.LayerNorm(dim)
-        self.attn_block = AttentionBlock(dim, num_heads, dim_head=32, dropout=dropout)
+        self.attn_block = AttentionBlock(dim, num_heads, dim_head, dropout)
         self.norm2 = nn.LayerNorm(dim)
         self.ff_block = FeedForwardBlock(dim, dropout)
 
@@ -69,10 +68,9 @@ class EncoderBlock(nn.Module):
         return x
     
 class TransformerEncoder(nn.Module):
-    def __init__(self, num_layers, dim, num_heads, dropout):
+    def __init__(self, num_layers, dim, num_heads, dim_head, dropout):
         super().__init__()
-        layers = [EncoderBlock(dim, num_heads, dropout)
-                  for _ in range(num_layers)]
+        layers = [EncoderBlock(dim, num_heads, dim_head, dropout) for _ in range(num_layers)]
         self.encoders = nn.Sequential(*layers)
 
     def forward(self, x):
@@ -80,10 +78,10 @@ class TransformerEncoder(nn.Module):
         return out
 
 class MLP_Head(nn.Module):
-    def __init__(self, dim, num_classes):
+    def __init__(self, in_dim, out_dim):
         super().__init__()
-        self.head = nn.Sequential(nn.LayerNorm(dim), 
-                                  nn.Linear(dim, num_classes))
+        self.head = nn.Sequential(nn.LayerNorm(in_dim), 
+                                  nn.Linear(in_dim, out_dim))
         
     def forward(self, x):
         return self.head(x)
@@ -97,36 +95,32 @@ class VIT(nn.Module):
     def __init__(self, config):
         super(VIT, self).__init__()
         patch_dim = config['patch_dim']
-        num_heads = config['num_heads'] 
-        num_layers = config['num_layers']
-        dim = config['dim']
-        dropout = config['dropout']
+        emb_dim   = config['emb_dim']
         img_shape = config['image_shape']
 
-        self.in_channels = config['image_channels'] 
-        self.token_dim = patch_dim * patch_dim * self.in_channels  # length of linearized patchs
-        self.dim = dim # The embedding dimension for the Encoder
+        self.token_dim = patch_dim * patch_dim * config['image_channels']   # length of linearized patchs
         self.num_patches = ((img_shape[0]//patch_dim) * (img_shape[0]//patch_dim))
 
         self.patch_embedding = nn.Sequential(
                                     Rearrange('b c (h p1) (w p2) -> b (h w) (p1 p2 c)', p1 = patch_dim, p2 = patch_dim),
                                     nn.LayerNorm(self.token_dim),
-                                    nn.Linear(self.token_dim, dim))
-        self.class_embedding = nn.Parameter(torch.randn(1, 1, dim))
-        self.pos_embedding = nn.Parameter(torch.randn(1, self.num_patches + 1, dim))
-        self.emb_dropout = nn.Dropout(p=0.2)
-        self.transformer_encoder = TransformerEncoder(num_layers, dim, num_heads, dropout)
-        self.mlp_head = MLP_Head(dim, 1)
+                                    nn.Linear(self.token_dim, emb_dim))
+        self.class_embedding = nn.Parameter(torch.randn(1, 1, emb_dim))
+        self.pos_embedding = nn.Parameter(torch.randn(1, self.num_patches + 1, emb_dim))
+        self.emb_dropout = nn.Dropout(p=config['emb_dropout'])
+        self.transformer_encoder = TransformerEncoder(config['num_layers'], emb_dim, config['num_heads'], 
+                                                      config['dim_head'], config['dropout'])
+        self.mlp_head = MLP_Head(emb_dim, 1)
            
     def forward(self, imgs): 
-        patch_emb = self.patch_embedding(imgs) # [N, 64, dim]
+        patch_emb = self.patch_embedding(imgs) # i.e. [b, 64, dim]
         b, n, _ = patch_emb.shape
         class_tokens = repeat(self.class_embedding, '() n d -> b n d', b = b)
-        embeddings = torch.cat((class_tokens, patch_emb), dim=1) # [N, 65, dim]
+        embeddings = torch.cat((class_tokens, patch_emb), dim=1) # i.e. [b, 65, dim]
         embeddings += self.pos_embedding[:, :(n + 1)]
         x = self.emb_dropout(embeddings)
         x = self.transformer_encoder(x)
-        logits = self.mlp_head(x[:, 0, :])  # [N, 1] just apply to the CLS token
+        logits = self.mlp_head(x[:, 0, :])  # [b, 1] just apply to the CLS token
         return logits 
 
 

@@ -33,10 +33,9 @@ class CNN_Dataset_BW(Dataset):
     def _bin(self, x):
         return format(x, '08b')
 
-    def _make_img(self, x, shape):
+    def _encode_channel(self, x, shape):
         d = ''.join([self._bin(i) for i in x.numpy()])
-        # turn d into a list of integers, one for each bit
-        d = [int(x) for x in d]    
+        d = [int(x) for x in d] # turn d into a list of integers, one for each bit
         t = torch.tensor(d[:(shape[0]*shape[1])], dtype=torch.float32) # this is for 46,46 matrix
         t = t.reshape(shape)
         t = t.unsqueeze(0) # add channel dimension
@@ -45,15 +44,12 @@ class CNN_Dataset_BW(Dataset):
     """ Returns image, kd pairs used for CNN training """
     def __getitem__(self, idx):
         dix, kd = self.scFv_dataset.__getitem__(idx)
+        img = self._encode_channel(dix, self.img_shape) # all values are 0 or 1
 
-        # 50% of the time flip the sequences back-to-front
-        dix = torch.flip(dix, [0]) if (random.random() > 0.5) else dix
-
-        img = self._make_img(dix, self.img_shape) # all values are 0 or 1
-
-        if self.transform:
-            img = self.transform(img)
-            # Normalize image [-1, 1]
-            ing = (img - 0.5)/0.5
+        # if self.transform:
+        #     img = self.transform(img)
+        
+        # Normalize image [-1, 1]
+        img = (img - 0.5)/0.5
 
         return img, kd

@@ -1,4 +1,5 @@
 import math
+import random
 import torch
 from torch.utils.data import Dataset
 import pandas as pd
@@ -61,10 +62,11 @@ class scFv_Dataset(Dataset):
             start_idx = np.random.randint(0, len(seq) - (self.config['block_size'] - 1))
             chunk = seq[start_idx:start_idx + self.config['block_size']-1]
 
-        # print('chunk length:', len(chunk), ', chunk:', chunk)
-
-        # encode every character to an integer
+        # encode every character
         dix = torch.tensor([self.stoi[s] for s in chunk], dtype=torch.long)
+
+        # Occasionally flip the aa sequences back-to-front to improve learning 
+        dix = torch.flip(dix, [0]) if (random.random() < self.config['seq_flip_prob']) else dix
 
         # prepend the CLS token to the sequence
         dix = torch.cat((torch.tensor([self.stoi['CLS']], dtype=torch.long), dix))
@@ -72,15 +74,13 @@ class scFv_Dataset(Dataset):
         # pad the end with PAD tokens if necessary
         first_aa = 1 # first aa position in the sequence (after CLS)
         last_aa = dix.shape[0] # last aa position in the sequence
-        # print('first_aa:', first_aa, ', last_aa:', last_aa)
         if dix.shape[0] < self.config['block_size']:
             dix = torch.cat((dix, torch.tensor([self.stoi['PAD']] * (self.config['block_size'] - len(dix)), dtype=torch.long)))
 
+        # dix looks like: [[CLS], x1, x2, x3, ..., xN, [PAD], [PAD], ..., [PAD]]
+        # Never mask CLS or PAD tokens
         mask = None
         if self.config['mask_prob'] > 0:
-            # dix looks like: [[CLS], x1, x2, x3, ..., xN, [PAD], [PAD], ..., [PAD]]
-            # Never mask CLS or PAD tokens
-
             # get number of tokens to mask
             n_pred = max(1, int(round((last_aa - first_aa)*self.config['mask_prob'])))
 
