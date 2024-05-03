@@ -1,18 +1,20 @@
 
 model_params:
-  block_size: 288    # can fit the max of 247 amino acids + CLS token + PAD tokens
-                     # and be reshaped into a (48,48) single-channel tensor of 1's and 0's
-                     # (48,48) needed to allow for 4x4 patches fed into the ViT model
+  block_size: 242    # can fit the max of 241 amino acids + CLS token + PAD tokens
+                     # and be reshaped into a (44,44) single-channel tensor of 1's and 0's
+                     # (44,44) needed to allow for 4x4 patches fed into the ViT model
+                     # This process clips off the last 5 residues of the protein sequence,
+                     # but they are constant in all cases, so it should not affect the model
   mask_prob: 0.0
 
-  image_shape: [48, 48] # 48x48 pixel images
+  image_shape: [44,44]  
   patch_dim: 4          # 4x4 pixel patches
   num_heads: 8 
   num_layers: 6
   dim: 128  
   dropout: 0.3
 
-  image_channels: 3     # 3: BGR, 1:grayscale
+  image_channels: 3     # 3:BGR, 1:grayscale
 
   accelerator : 'gpu'   # cpu, gpu, mps(macbook M2 chip)
   devices: 2
@@ -21,8 +23,8 @@ model_params:
   grad_norm_clip : 1.0
   num_epochs : 1000
   log_dir : './lightning_logs/vit_model/cleaned-3/BGR/'
-  train_data_path: '../data/train_set.csv'
-  test_data_path:  None #'/Users/markthompson/Documents/dev/a-alphaBio-homework/data/q_cleaned_3_val_set.csv'
+  train_data_path: '/home/mark/dev/aAlphaBio-Homework/data/q_cleaned_3_train_set.csv'
+  test_data_path:  '/home/mark/dev/aAlphaBio-Homework/data/q_cleaned_3_val_set.csv'
 
   # inference_data_path:  '/Users/markthompson/Documents/dev/a-alphaBio-homework/data/q_cleaned_2_val_set.csv'
   # inference_data_path: '/Users/markthompson/Documents/dev/a-alphaBio-homework/data/alphaseq_data_hold_out.csv'

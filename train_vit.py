@@ -2,8 +2,10 @@ import os
 import yaml
 import argparse
 import pytorch_lightning as pl
+import torch
 from torch.utils.data import DataLoader
 from models.vit.vit import VIT_Lightning
+from torchvision.transforms.v2 import Compose, ToDtype, RandomHorizontalFlip, RandomVerticalFlip 
 
 #----------------------------------------------------------------------
 # This file is for training the simple VIT model
@@ -21,23 +23,26 @@ def train(args):
     print(config)
     pl.seed_everything(config['seed'])
 
-
-    #----------------------------------------------------------
-    # Load the dataset
-    #----------------------------------------------------------
     if config['image_channels'] == 1:
         from datasets.cnn_dataset_bw import CNN_Dataset_BW as dataset
     elif config['image_channels'] == 3:
         from datasets.cnn_dataset_bgr import CNN_Dataset_BGR as dataset
 
-    train_data_path = config['train_data_path']  
-    train_dataset = dataset(config, train_data_path)
+    #----------------------------------------------------------
+    # Load the dataset and dataloaders
+    #----------------------------------------------------------
+    train_transforms = Compose([ToDtype(torch.float32, scale=False),
+                                RandomHorizontalFlip(p=0.25),
+                                RandomVerticalFlip(p=0.25)])
+
+    val_transforms = Compose([ToDtype(torch.float32, scale=False)])
+    
+    train_dataset = dataset(config, config['train_data_path'], train_transforms)
     print(train_dataset.__len__())
     config['vocab_size'] = train_dataset.get_vocab_size()
     print('config[vocab_size]:', config['vocab_size'], ', config[block_size]:', config['block_size'])
 
-    test_data_path = config['test_data_path'] 
-    test_dataset = dataset(config, test_data_path)
+    test_dataset = dataset(config, config['test_data_path'], val_transforms)
     print(test_dataset.__len__())
     
     train_loader = DataLoader(train_dataset, shuffle=True, pin_memory=True, batch_size=config['batch_size'], 
