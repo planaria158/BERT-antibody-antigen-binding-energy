@@ -1,4 +1,5 @@
 import math
+import random
 import torch
 from torch.utils.data import Dataset
 import pandas as pd
@@ -44,6 +45,10 @@ class CNN_Dataset_BW(Dataset):
     """ Returns image, kd pairs used for CNN training """
     def __getitem__(self, idx):
         dix, kd = self.scFv_dataset.__getitem__(idx)
+
+        # 50% of the time flip the sequences back-to-front
+        dix = torch.flip(dix, [0]) if (random.random() > 0.5) else dix
+
         img = self._make_img(dix, self.img_shape) # all values are 0 or 1
 
         if self.transform:

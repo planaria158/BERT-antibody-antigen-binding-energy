@@ -31,11 +31,12 @@ def train(args):
     #----------------------------------------------------------
     # Load the dataset and dataloaders
     #----------------------------------------------------------
-    train_transforms = Compose([ToDtype(torch.float32, scale=False),
-                                RandomHorizontalFlip(p=0.25),
-                                RandomVerticalFlip(p=0.25)])
-
-    val_transforms = Compose([ToDtype(torch.float32, scale=False)])
+    # train_transforms = Compose([ToDtype(torch.float32, scale=False),
+    #                             RandomHorizontalFlip(p=0.25),
+    #                             RandomVerticalFlip(p=0.25)])
+    train_transforms = None
+    val_transforms = None
+    # val_transforms = Compose([ToDtype(torch.float32, scale=False)])
     
     train_dataset = dataset(config, config['train_data_path'], train_transforms)
     print(train_dataset.__len__())
