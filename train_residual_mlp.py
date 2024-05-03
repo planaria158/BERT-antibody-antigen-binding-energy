@@ -26,18 +26,18 @@ def train(args):
     #----------------------------------------------------------
     # Load the dataset
     #----------------------------------------------------------
-    train_data_path = config['train_data_path']  
-    train_dataset = dataset(config, train_data_path)
+    train_dataset = dataset(config, config['train_data_path'])
     print(train_dataset.__len__())
     config['vocab_size'] = train_dataset.get_vocab_size()
     print('config[vocab_size]:', config['vocab_size'], ', config[block_size]:', config['block_size'])
 
-    test_data_path = config['test_data_path'] 
-    test_dataset = dataset(config, test_data_path)
+    test_dataset = dataset(config, config['test_data_path'])
     print(test_dataset.__len__())
     
-    train_loader = DataLoader(train_dataset, shuffle=True, pin_memory=True, batch_size=config['batch_size'], num_workers=config['num_workers'])
-    test_loader = DataLoader(test_dataset, shuffle=False, pin_memory=True, batch_size=config['batch_size'], num_workers=5)
+    train_loader = DataLoader(train_dataset, shuffle=True, pin_memory=True, batch_size=config['batch_size'], 
+                              num_workers=config['num_workers'], persistent_workers=True)
+    test_loader = DataLoader(test_dataset, shuffle=False, pin_memory=True, batch_size=config['batch_size'], 
+                             num_workers=5, persistent_workers=True)
 
     #----------------------------------------------------------
     # Model
@@ -61,14 +61,13 @@ def train(args):
     logger = TensorBoardLogger(save_dir=os.getcwd(), name=config['log_dir'], default_hp_metric=False)
 
     print('Using', config['accelerator'])
-    trainer = pl.Trainer(strategy='ddp', 
+    trainer = pl.Trainer(#strategy='ddp', 
                          accelerator=config['accelerator'], 
                          devices=config['devices'],
                          max_epochs=config['num_epochs'],   
                          logger=logger, 
                          log_every_n_steps=config['log_every_nsteps'], 
                          callbacks=[checkpoint_callback])   
-
 
     trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=test_loader)
     
