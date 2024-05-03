@@ -46,8 +46,8 @@ class CNN_Dataset_BW(Dataset):
         dix, kd = self.scFv_dataset.__getitem__(idx)
         img = self._encode_channel(dix, self.img_shape) # all values are 0 or 1
 
-        # if self.transform:
-        #     img = self.transform(img)
+        if self.transform:
+            img = self.transform(img)
         
         # Normalize image [-1, 1]
         img = (img - 0.5)/0.5

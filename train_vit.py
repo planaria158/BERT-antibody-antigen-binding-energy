@@ -31,19 +31,19 @@ def train(args):
     #----------------------------------------------------------
     # Load the dataset and dataloaders
     #----------------------------------------------------------
-    # train_transforms = Compose([ToDtype(torch.float32, scale=False),
-    #                             RandomHorizontalFlip(p=0.25),
-    #                             RandomVerticalFlip(p=0.25)])
-    train_transforms = None
-    val_transforms = None
-    # val_transforms = Compose([ToDtype(torch.float32, scale=False)])
+    if config['apply_augmentation'] == True:
+        train_transforms = Compose([ToDtype(torch.float32, scale=False),
+                                    RandomHorizontalFlip(p=0.25)]) #,
+                                    # RandomVerticalFlip(p=0.25)])
+    else:
+        train_transforms = None
     
     train_dataset = dataset(config, config['train_data_path'], train_transforms)
     print(train_dataset.__len__())
     config['vocab_size'] = train_dataset.get_vocab_size()
     print('config[vocab_size]:', config['vocab_size'], ', config[block_size]:', config['block_size'])
 
-    test_dataset = dataset(config, config['test_data_path'], val_transforms)
+    test_dataset = dataset(config, config['test_data_path'])
     print(test_dataset.__len__())
     
     train_loader = DataLoader(train_dataset, shuffle=True, pin_memory=True, batch_size=config['batch_size'], 
@@ -54,7 +54,14 @@ def train(args):
     #----------------------------------------------------------
     # Model
     #----------------------------------------------------------
-    model = VIT_Lightning(config) 
+    if config['checkpoint_name'] != 'None':
+        print('Restarting from checkpoint: ', config['checkpoint_name'])
+        path = config['checkpoint_name']
+        model = VIT_Lightning.load_from_checkpoint(checkpoint_path=path, config=config)
+    else:
+        print('Starting from new model instance')
+        model = VIT_Lightning(config) 
+
     total_params = sum(param.numel() for param in model.parameters())
     print('Model has:', int(total_params), 'parameters')
 

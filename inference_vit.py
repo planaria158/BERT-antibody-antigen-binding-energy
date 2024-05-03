@@ -3,7 +3,7 @@ import yaml
 import argparse
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
-from datasets.cnn_dataset_bw import CNN_Dataset as dataset
+from datasets.cnn_dataset_bw import CNN_Dataset_BW as dataset
 from models.vit.vit import VIT_Lightning
 
 #----------------------------------------------------------------------
@@ -27,9 +27,7 @@ def train(args):
     #----------------------------------------------------------
     # Load the dataset
     #----------------------------------------------------------
-    inference_data_path = config['inference_data_path']
-    # inference_data_path = '/home/mark/dev/aAlphaBio-Homework/data/val_set.csv'
-    inference_dataset = dataset(config, inference_data_path, inference=False) #inference=True)
+    inference_dataset = dataset(config, config['inference_data_path'], inference=False) #inference=True)
     print(inference_dataset.__len__())
     config['vocab_size'] = inference_dataset.get_vocab_size()
     print('config[vocab_size]:', config['vocab_size'], ', config[block_size]:', config['block_size'])
