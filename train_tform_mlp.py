@@ -4,15 +4,16 @@ import argparse
 import pytorch_lightning as pl
 import torch
 from torch.utils.data import DataLoader
-from models.vit.vit import VIT_Lightning
 from torchvision.transforms.v2 import Compose, ToDtype, RandomHorizontalFlip, RandomVerticalFlip 
+from models.tform_mlp.tform_mlp import TFormMLP_Lightning
+from datasets.scFv_dataset import scFv_Dataset as dataset
 
 #----------------------------------------------------------------------
-# This file is for training the simple VIT model
+# This file is for training the simple Transformer-residualMLP model
 #----------------------------------------------------------------------
 def train(args):
     # Read the config
-    config_path = './config/vit_params.yaml'  
+    config_path = './config/tform_mlp_params.yaml'  
     with open(config_path, 'r') as file:
         try:
             config = yaml.safe_load(file)
@@ -22,14 +23,6 @@ def train(args):
     config = config['model_params']
     print(config)
     pl.seed_everything(config['seed'])
-
-    #----------------------------------------------------------
-    # Import the correct dataset
-    #----------------------------------------------------------
-    if config['image_channels'] == 1:
-        from datasets.cnn_dataset_bw import CNN_Dataset_BW as dataset
-    elif config['image_channels'] == 3:
-        from datasets.cnn_dataset_bgr import CNN_Dataset_BGR as dataset
 
     #----------------------------------------------------------
     # Load the dataset and dataloaders
@@ -61,10 +54,10 @@ def train(args):
     if config['checkpoint_name'] != 'None':
         print('Restarting from checkpoint: ', config['checkpoint_name'])
         path = config['checkpoint_name']
-        model = VIT_Lightning.load_from_checkpoint(checkpoint_path=path, config=config)
+        model = TFormMLP_Lightning.load_from_checkpoint(checkpoint_path=path, config=config)
     else:
         print('Starting from new model instance')
-        model = VIT_Lightning(config) 
+        model = TFormMLP_Lightning(config) 
 
     total_params = sum(param.numel() for param in model.parameters())
     print('Model has:', int(total_params), 'parameters')
@@ -97,9 +90,9 @@ def train(args):
     
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Arguments for vit_model')
+    parser = argparse.ArgumentParser(description='Arguments for tform_mlp')
     parser.add_argument('--config', dest='config_path',
-                        default='config/vit_params.yaml', type=str)
+                        default='config/tform_mlp_params.yaml', type=str)
     args = parser.parse_args()
     train(args)
 
