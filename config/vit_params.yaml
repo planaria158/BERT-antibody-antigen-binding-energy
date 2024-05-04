@@ -31,9 +31,9 @@ model_params:
   test_data_path:  '/home/mark/dev/aAlphaBio-Homework/data/q_cleaned_3_val_set.csv'
 
   # restart from checkpt
-  checkpoint_name: '/home/mark/dev/aAlphaBio-Homework/lightning_logs/vit_model/cleaned-3/BW/version_6/checkpoints/epoch=286-step=18900.ckpt'
+  checkpoint_name: '/home/mark/dev/aAlphaBio-Homework/lightning_logs/vit_model/cleaned-3/BW/version_7/checkpoints/epoch=116-step=7700.ckpt'
   learning_rate : 0.0001
-  lr_gamma: 0.9990     # for exponential learning rate decay
+  lr_gamma: 0.9999     # exponential learning rate decay
   betas : [0.9, 0.95]
   checkpoint_every_n_train_steps : 100
   save_top_k : 1
