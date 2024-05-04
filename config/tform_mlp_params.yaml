@@ -9,8 +9,8 @@ model_params:
   vocab_size]: 24    # 20 amino acids + special tokens (CLS, X, PAD, MASK)                 
 
   seq_flip_prob: 0.1 # regularization: probability of flipping the sequence back-to-front
-  aa_mask_prob:  0.0 #0.02 # regularization: probability of masking an amino acid 
-                     # (this masks ~4-5 residues in seq of 242 if prob = 0.02)
+  aa_mask_prob:  0.0 #0.05 # regularization: probability of masking an amino acid 
+                     # (this masks ~10-15 residues in seq of 242 if prob = 0.05)
 
   image_shape: [44,44]  
   num_heads: 8 

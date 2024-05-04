@@ -51,10 +51,10 @@ class scFv_Dataset(Dataset):
     def __len__(self):
         return self.df.shape[0] 
 
-    """ 
-        Returns sequence, affinity pairs
-    """
     def __getitem__(self, idx):
+        """ 
+            Returns sequence, affinity pairs
+        """
         seq = self.df.loc[idx, 'sequence_a']
         affinity = self.df.loc[idx, 'Kd'] if self.inference == False else 0.0
         assert not math.isnan(affinity), 'affinity is nan'
@@ -77,10 +77,11 @@ class scFv_Dataset(Dataset):
             dix = torch.flip(dix, [0]) if (random.random() < self.config['seq_flip_prob']) else dix
 
             # mask a small perentage of the amino acids with the MASK token
+            # TODO: under construction...
             if self.config['seq_mask_prob'] > 0.0:
                 num_2_mask = max(1, (dix.shape[0])*self.config['mask_prob']) 
-                print('config[mask_prob]:'j, config['mask_prob'], ', num_2_mask:', num_2_mask)
-                masked_idx = torch.randperm((dix.shape[0]-1), dtype=torch.long)[:num_2_mask]
+                print('config[mask_prob]:', self.config['mask_prob'], ', num_2_mask:', num_2_mask)
+                masked_idx = torch.randperm((dix.shape[0]), dtype=torch.long)[:num_2_mask]
                 print('masked_idx values:', masked_idx)
                 dix[masked_idx] = self.stoi['MASK']
                 # TODO or could use a randomly chosen aa residue instead of MASK token?
