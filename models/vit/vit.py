@@ -12,11 +12,14 @@ from einops import repeat, rearrange
 from models.transformer_parts.transformer_parts import TransformerEncoder, MLP_Head
 
 
-#--------------------------------------------------------------------
-# The vision transformer model
-# typical settings: 48x48 image, patch_dim=2, num_patches=144
-#--------------------------------------------------------------------
 class VIT(nn.Module):
+    """
+        Vision Transformer Model
+        Intended to operate on 2D images constructed from scFv sequences
+
+        Args:
+            config: dict with configuration parameters
+    """
     def __init__(self, config):
         super(VIT, self).__init__()
         patch_dim = config['patch_dim']
@@ -49,11 +52,13 @@ class VIT(nn.Module):
         return logits 
 
 
-#----------------------------------------------------------
-# Pytorch Lightning Module that hosts a simple vision
-# transformer model
-#----------------------------------------------------------
 class VIT_Lightning(LightningModule):
+    """
+        Pytorch Lightning Module for training Vision Transformer
+
+        Args:
+            config: dict with configuration parameters
+    """
     def __init__(self, config):
         super(VIT_Lightning, self).__init__()
         self.config = config

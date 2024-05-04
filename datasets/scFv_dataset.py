@@ -5,11 +5,17 @@ from torch.utils.data import Dataset
 import pandas as pd
 import numpy as np
 
-#-------------------------------------------------------------------------
-# Dataset class for scFv sequences
-# Emits pairs amino acid sequences and binding energies
-#-------------------------------------------------------------------------
 class scFv_Dataset(Dataset):
+    """
+        Dataset class for scFv sequence, Kd data
+
+        Args:
+            config: dict with configuration parameters
+            csv_file_path: path to the csv file
+            skiprows: number of rows to skip at the beginning of the file
+            inference: if True, the dataset is used for inference
+            augment: if True, the dataset is used for training and data augmentation is applied
+    """
     def __init__(self, config, csv_file_path, skiprows=0, inference=False, augment=False):  
         super().__init__()
         self.config = config
@@ -22,6 +28,8 @@ class scFv_Dataset(Dataset):
         # 'X' is a special token for unknown amino acids, CLS token is for classification, and PAD for padding
         self.chars = ['CLS', 'A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 
                       'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y', 'X', 'MASK', 'PAD']
+        self.first_aa = self.chars[1]
+        self.last_aa = self.chars[20]
         print('vocabulary:', self.chars)
         data_size, vocab_size = self.df.shape[0], len(self.chars)
         print('data has %d rows, %d vocab size (unique).' % (data_size, vocab_size))
@@ -31,6 +39,9 @@ class scFv_Dataset(Dataset):
         self.itos = { i:ch for i,ch in enumerate(self.chars) }
         self.vocab_size = vocab_size
 
+    def get_random_aa(self):
+        return self.chars[np.random.randint(1, 21)]
+    
     def get_vocab_size(self):
         return self.vocab_size
 
@@ -65,8 +76,16 @@ class scFv_Dataset(Dataset):
             # occasionally flip the aa sequences back-to-front as a regularization technique 
             dix = torch.flip(dix, [0]) if (random.random() < self.config['seq_flip_prob']) else dix
 
-            # TODO: possible to switch a small perentage of the amino acids with a 
-            # random amino acid or with the MASK token as a further regularization technique?
+            # mask a small perentage of the amino acids with the MASK token
+            if self.config['seq_mask_prob'] > 0.0:
+                num_2_mask = max(1, (dix.shape[0])*self.config['mask_prob']) 
+                print('config[mask_prob]:'j, config['mask_prob'], ', num_2_mask:', num_2_mask)
+                masked_idx = torch.randperm((dix.shape[0]-1), dtype=torch.long)[:num_2_mask]
+                print('masked_idx values:', masked_idx)
+                dix[masked_idx] = self.stoi['MASK']
+                # TODO or could use a randomly chosen aa residue instead of MASK token?
+                # dix[masked_idx] = self.stoi[self.get_random_aa()]
+                # Nah! I think MASK is better token. It's more like dropout
 
         # prepend the CLS token to the sequence
         dix = torch.cat((torch.tensor([self.stoi['CLS']], dtype=torch.long), dix))

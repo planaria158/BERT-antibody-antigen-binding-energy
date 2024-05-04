@@ -12,13 +12,25 @@ from einops import repeat, rearrange
 from models.residual_mlp.residual_mlp import ResidualMLP
 from models.transformer_parts.transformer_parts import TransformerEncoder, MLP_Head
 
-#----------------------------------------------------------
-# This is a simple transformer front-ending a residual-MLP
-# It operates on sequences of residues of block_size length
-# Regression is done via the usual class token added to the
-# start of the sequence
-#----------------------------------------------------------
 class TFormMLP(nn.Module):
+    """
+        Dataset class for a transformer model that operates on sequences of residues
+        It operates on sequences of residues of block_size length
+        Regression is done via the usual class token added to the start of the sequence
+
+        This model consists of a front-end Transformer and a ResidualMLP regression head
+
+        Args:
+            config: dictionary of config parameters containing the following keys:
+                'vocab_size': size of the vocabulary of residues
+                'emb_dim': dimension of the token embeddings
+                'block_size': length of the sequences to be processed
+                'num_layers': number of transformer layers
+                'num_heads': number of attention heads
+                'dim_head': dimension of the attention head
+                'tform_dropout': dropout rate for the transformer layers
+                'emb_dropout': dropout rate for the token embeddings
+    """
     def __init__(self, config):
         super(TFormMLP, self).__init__()
         emb_dim   = config['emb_dim']
@@ -30,8 +42,7 @@ class TFormMLP(nn.Module):
         self.emb_dropout = nn.Dropout(p=config['emb_dropout'])
         self.transformer = TransformerEncoder(config['num_layers'], emb_dim, config['num_heads'], 
                                               config['dim_head'], config['tform_dropout'])
-        self.ln_f = nn.LayerNorm(emb_dim)
-
+        
         # The residualMLP regression head
         self.regression_head = ResidualMLP(config, emb_dim)
            
@@ -44,15 +55,31 @@ class TFormMLP(nn.Module):
         embeddings += self.pos_embedding[:, :(n + 1)]
         x = self.emb_dropout(embeddings)
         x = self.transformer(x)
-        x = self.ln_f(x)
+        # x = self.ln_f(x)
         logits = self.regression_head(x[:, 0, :])  # [b, 1, emb] just apply to the class token
         return logits 
 
 
-#----------------------------------------------------------
-# Pytorch Lightning Module that hosts the TFormMLP model
-#----------------------------------------------------------
+
 class TFormMLP_Lightning(LightningModule):
+    """
+        Pytorch Lightning Module that hosts the TFormMLP model
+
+        Args:
+            config: dictionary of config parameters containing the following keys:
+                'vocab_size': size of the vocabulary of residues
+                'emb_dim': dimension of the token embeddings
+                'block_size': length of the sequences to be processed
+                'num_layers': number of transformer layers
+                'num_heads': number of attention heads
+                'dim_head': dimension of the attention head
+                'tform_dropout': dropout rate for the transformer layers
+                'emb_dropout': dropout rate for the token embeddings
+                'learning_rate': initial learning rate
+                'betas': betas for the AdamW optimizer
+                'lr_gamma': gamma for the learning rate scheduler
+                'inference_results_folder': folder to save inference results
+    """
     def __init__(self, config):
         super(TFormMLP_Lightning, self).__init__()
         self.config = config

@@ -6,13 +6,21 @@ import pandas as pd
 import numpy as np
 from datasets.scFv_dataset import scFv_Dataset
 
-#--------------------------------------------------------------
-# Simple wrapper Dataset to turn output from the scFv dataset
-# into a single-channel image for use in image-based models
-#--------------------------------------------------------------
 class Image_Dataset_BW(Dataset):
     """
-    Emits 2D B&W images and binding energies
+        Dataset class for scFv sequence, Kd data
+
+        Wraps the scFv_Dataset and converts its output 
+        into a single-channel 2D image for use in image-based models
+        like Vision Transformer, for example
+
+        Args:
+            config: dict with configuration parameters
+            csv_file_path: path to the csv file
+            skiprows: number of rows to skip at the beginning of the file
+            inference: if True, the dataset is used for inference
+            augment: if True, the dataset is used for training and data augmentation is applied
+
     """
     def __init__(self, config, csv_file_path, transform=None, skiprows=0, inference=False):  
         super().__init__()
@@ -33,10 +41,20 @@ class Image_Dataset_BW(Dataset):
     def _bin(self, x):
         return format(x, '08b')
 
-    # Input is a tensor of integers.
-    # Output is a tensor of binary encoded input tensor (over 8 bits)
-    # and reshaped into a [1, shape[0], shape[1]]) tensor
-    # everything that comes out of this method is 1's and 0's only
+
+    """
+        Encodes a channel of the image
+        linear tensor is binary encoded (over 8-bits) and reshaped into a 2D tensor
+
+        Args:
+            x: tensor of integers
+            shape: shape of the image
+
+        Returns:
+            tensor: tensor of shape (1, shape[0], shape[1])
+                    the tensor will contain 1's and 0's only
+
+    """
     def _encode_channel(self, x, shape):
         d = ''.join([self._bin(i) for i in x.numpy()])
         d = [int(x) for x in d] # turn d into a list of integers, one for each bit

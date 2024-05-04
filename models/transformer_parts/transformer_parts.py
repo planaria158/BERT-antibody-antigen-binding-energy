@@ -2,11 +2,23 @@ import torch
 from torch import nn
 from einops import repeat, rearrange
 
-#----------------------------------------------------------
-# These are the "parts" needed to make a transformer
-# block that can be inserted into other models
-#----------------------------------------------------------
+"""
+    These are the building blocks needed to make a transformer
+    block that can be inserted into other models
+"""
+
+
 class FeedForwardBlock(nn.Module):
+    """
+        Feed Forward Block
+        Consists of two linear layers with GELU activation
+        and dropout
+
+        Args:
+            dim: int, dimension of the input tensor
+            dropout: float, dropout rate
+            multiplier: int, multiplier for the inner dimension
+    """
     def __init__(self, dim, dropout=0., multiplier=4):
         super().__init__()
         inner_dim = dim * multiplier
@@ -21,7 +33,18 @@ class FeedForwardBlock(nn.Module):
         out = self.block(x)
         return out
 
+
 class AttentionBlock(nn.Module):
+    """
+        Attention Block: multi-headed self-attention
+        uses pre-normalization
+
+        Args:
+            dim: int, dimension of the input tensor
+            heads: int, number of attention heads
+            dim_head: int, dimension of the attention head
+            dropout: float, dropout rate
+    """
     def __init__(self, dim, heads, dim_head, dropout=0.):  
         super().__init__()
         inner_dim = dim_head * heads
@@ -46,7 +69,20 @@ class AttentionBlock(nn.Module):
         out = rearrange(out, 'b h n d -> b n (h d)')
         return self.to_out(out)
 
+
+
 class EncoderBlock(nn.Module):
+    """
+        Encoder Block
+        Consists of an attention block and a feedforward block
+        Uses residual connections and layer normalization
+
+        Args:
+            dim: int, dimension of the input tensor
+            num_heads: int, number of attention heads
+            dim_head: int, dimension of the attention head
+            dropout: float, dropout rate
+    """
     def __init__(self, dim, num_heads, dim_head, dropout):
         super().__init__()
         self.norm1 = nn.LayerNorm(dim)
@@ -59,7 +95,19 @@ class EncoderBlock(nn.Module):
         x = x + self.ff_block(self.norm2(x)) 
         return x
     
+
 class TransformerEncoder(nn.Module):
+    """
+        Transformer Encoder
+        The transformer encoder block
+
+        Args:
+            num_layers: int, number of encoder blocks
+            dim: int, dimension of the input tensor
+            num_heads: int, number of attention heads
+            dim_head: int, dimension of the attention head
+            dropout: float, dropout rate
+    """
     def __init__(self, num_layers, dim, num_heads, dim_head, dropout):
         super().__init__()
         layers = [EncoderBlock(dim, num_heads, dim_head, dropout) for _ in range(num_layers)]
@@ -69,7 +117,15 @@ class TransformerEncoder(nn.Module):
         out = self.encoders(x)
         return out
 
+
 class MLP_Head(nn.Module):
+    """
+        MLP Head
+
+        Args:
+            in_dim: int, input dimension
+            out_dim: int, output dimension
+    """
     def __init__(self, in_dim, out_dim):
         super().__init__()
         self.head = nn.Sequential(nn.LayerNorm(in_dim), 
@@ -78,10 +134,20 @@ class MLP_Head(nn.Module):
     def forward(self, x):
         return self.head(x)
     
-"""
-    Layer class for the MLP
-"""
+
+
 class Layer(nn.Module):
+    """
+        Layer : a single layer of the MLP used in transformer models
+                uses prenormalization with layer normalization
+
+        Args:
+            in_dim: int, input dimension
+            out_dim: int, output dimension
+            dropout: float, dropout rate
+            normalize: bool, whether to apply batch normalization
+            activation: bool, whether to apply GELU activation
+    """
     def __init__(self, in_dim, out_dim, dropout=0.0, normalize=True, activation=True):
         super(Layer, self).__init__()
         self.normalize = normalize
@@ -96,17 +162,24 @@ class Layer(nn.Module):
         out = self.dropout(self.activation(self.linear(self.norm(x))))
         return out
 
-"""
-    Vanilla MLP
-    The regular mlp is a 3-layer mlp: 
+
+
+class MLP(nn.Module):
+    """
+        MLP: a simple multi-layer perceptron
+        
+        A fixed-size 3-layer mlp: 
         input layer (input_dim, 4*input_dim)
         hidden layer(4*input_dim, 2*input_dim)
         output layer(2*input_dim, 1)
-"""
-class MLP(nn.Module):
+
+        Args:
+            config: dict, configuration dictionary
+            input_dim: int, input dimension 
+    """
     def __init__(self, config, input_dim):
         super(MLP, self).__init__()
-        print('Regression head is MLP')
+
         mlp_hidden_mults = (4, 2) # hardwired with values from TabTransformer paper
 
         hidden_dimensions = [input_dim * t for t in  mlp_hidden_mults]

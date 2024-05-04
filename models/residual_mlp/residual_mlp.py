@@ -7,10 +7,16 @@ import torch
 from torch import nn
 from pytorch_lightning.core import LightningModule
 
-#----------------------------------------------------------
-# Layer class for the ResidualMLP model
-#----------------------------------------------------------
 class Layer(nn.Module):
+    """
+        A single layer of an MLP type network
+        Args:
+            in_dim: input dimension
+            out_dim: output dimension
+            dropout: dropout rate
+            normalize: whether to apply batch normalization
+            activation: whether to apply GELU activation
+    """
     def __init__(self, in_dim, out_dim, dropout=0.0, normalize=True, activation=True):
         super(Layer, self).__init__()
         self.normalize = normalize
@@ -24,10 +30,14 @@ class Layer(nn.Module):
         out = self.dropout(self.activation(self.norm(self.linear(x))))
         return out
 
-"""
-    An MLP with residual connections
-"""
 class ResidualMLP(nn.Module):
+    """
+        An MLP model that uses resiual-like connections between layers
+
+        Args:
+            config: dictionary of config parameters
+            input_dim: input dimension
+    """
     def __init__(self, config, input_dim):
         super(ResidualMLP, self).__init__()
         print('Regression head is ResidualMLP')
@@ -59,12 +69,20 @@ class ResidualMLP(nn.Module):
         return logits
 
 
-    
-#----------------------------------------------------------
-# Pytorch Lightning Module that hosts a DenseMLP model
-# and runs the training, validation, and testing loops
-#----------------------------------------------------------
+
 class ResidualMLP_Lightning(LightningModule):
+    """
+        Pytorch Lightning Module that hosts the ResidualMLP model
+
+        Args:
+            config: dictionary of config parameters containing the following keys:
+                'block_size': length of the sequences to be processed
+                'learning_rate': learning rate
+                'betas': betas for Adam optimizer
+                'lr_gamma': gamma for the learning rate scheduler
+                'grad_norm_clip': gradient norm clipping value
+                'inference_results_folder': folder to save the inference results
+    """
     def __init__(self, config):
         super(ResidualMLP_Lightning, self).__init__()
         self.config = config

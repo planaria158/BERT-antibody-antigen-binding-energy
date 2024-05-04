@@ -9,6 +9,8 @@ model_params:
   vocab_size]: 24    # 20 amino acids + special tokens (CLS, X, PAD, MASK)                 
 
   seq_flip_prob: 0.1 # regularization: probability of flipping the sequence back-to-front
+  aa_mask_prob:  0.0 #0.02 # regularization: probability of masking an amino acid 
+                     # (this masks ~4-5 residues in seq of 242 if prob = 0.02)
 
   image_shape: [44,44]  
   num_heads: 8 
@@ -31,7 +33,7 @@ model_params:
 
   # restart from checkpt
   checkpoint_name: None
-  learning_rate : 0.0001
+  learning_rate : 0.001
   lr_gamma: 0.9995     # for exponential learning rate decay
   betas : [0.9, 0.95]
   checkpoint_every_n_train_steps : 100
