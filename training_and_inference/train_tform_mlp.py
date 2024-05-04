@@ -25,12 +25,12 @@ def train(args):
     #----------------------------------------------------------
     # Load the dataset and dataloaders
     #----------------------------------------------------------
-    train_dataset = dataset(config, config['train_data_path'])
+    train_dataset = dataset(config, config['train_data_path'], augment=True)
     print(train_dataset.__len__())
     config['vocab_size'] = train_dataset.get_vocab_size()
     print('config[vocab_size]:', config['vocab_size'], ', config[block_size]:', config['block_size'])
 
-    test_dataset = dataset(config, config['test_data_path'])
+    test_dataset = dataset(config, config['test_data_path'], augment=False)
     print(test_dataset.__len__())
     
     train_loader = DataLoader(train_dataset, shuffle=True, pin_memory=True, batch_size=config['batch_size'], 
@@ -67,7 +67,7 @@ def train(args):
     logger = TensorBoardLogger(save_dir=os.getcwd(), name=config['log_dir'], default_hp_metric=False)
 
     print('Using', config['accelerator'])
-    trainer = pl.Trainer(strategy='ddp', 
+    trainer = pl.Trainer(strategy='ddp_find_unused_parameters_true', #'ddp', 
                          accelerator=config['accelerator'], 
                          devices=config['devices'],
                          max_epochs=config['num_epochs'],   

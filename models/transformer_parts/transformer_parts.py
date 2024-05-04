@@ -77,3 +77,54 @@ class MLP_Head(nn.Module):
         
     def forward(self, x):
         return self.head(x)
+    
+"""
+    Layer class for the MLP
+"""
+class Layer(nn.Module):
+    def __init__(self, in_dim, out_dim, dropout=0.0, normalize=True, activation=True):
+        super(Layer, self).__init__()
+        self.normalize = normalize
+        self.activation = activation
+        self.linear = nn.Linear(in_dim, out_dim)
+        self.norm = nn.LayerNorm(in_dim) if normalize else nn.Identity()
+        self.dropout = nn.Dropout(dropout) if dropout > 0 else nn.Identity() 
+        self.activation = nn.GELU() if activation else nn.Identity()
+
+    def forward(self, x):
+        # Use pre-normalization; i.e. first operation applied is normalization
+        out = self.dropout(self.activation(self.linear(self.norm(x))))
+        return out
+
+"""
+    Vanilla MLP
+    The regular mlp is a 3-layer mlp: 
+        input layer (input_dim, 4*input_dim)
+        hidden layer(4*input_dim, 2*input_dim)
+        output layer(2*input_dim, 1)
+"""
+class MLP(nn.Module):
+    def __init__(self, config, input_dim):
+        super(MLP, self).__init__()
+        print('Regression head is MLP')
+        mlp_hidden_mults = (4, 2) # hardwired with values from TabTransformer paper
+
+        hidden_dimensions = [input_dim * t for t in  mlp_hidden_mults]
+        all_dimensions = [input_dim, *hidden_dimensions, 1]
+        dims_pairs = list(zip(all_dimensions[:-1], all_dimensions[1:]))
+        layers = []
+        for ind, (in_dim, out_dim) in enumerate(dims_pairs):
+            print('making mlp. in_dim, out_dim:', in_dim, out_dim)
+            if ind >= (len(dims_pairs) - 1) :
+                # For regression, the very last Layer has no dropout, normalization, and activation
+                layer = Layer(in_dim, out_dim, normalize=False, activation=False)
+            else:
+                layer = Layer(in_dim, out_dim, config['regress_head_pdrop'], )
+            
+            layers.append(layer)
+
+        self.net = nn.Sequential(*layers)
+
+    def forward(self, x_in):
+        return self.net(x_in) 
+

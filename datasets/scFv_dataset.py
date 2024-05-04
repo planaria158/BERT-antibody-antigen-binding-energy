@@ -10,10 +10,11 @@ import numpy as np
 # Emits pairs amino acid sequences and binding energies
 #-------------------------------------------------------------------------
 class scFv_Dataset(Dataset):
-    def __init__(self, config, csv_file_path, skiprows=0, inference=False):  
+    def __init__(self, config, csv_file_path, skiprows=0, inference=False, augment=False):  
         super().__init__()
         self.config = config
         self.inference = inference
+        self.augment = augment # sequence flipping etc...
         print('reading the data from:', csv_file_path)
         self.df = pd.read_csv(csv_file_path, skiprows=skiprows)
         
@@ -59,8 +60,13 @@ class scFv_Dataset(Dataset):
         # encode the string
         dix = torch.tensor([self.stoi[s] for s in chunk], dtype=torch.long)
 
-        # occasionally flip the aa sequences back-to-front as a regularization technique 
-        dix = torch.flip(dix, [0]) if (random.random() < self.config['seq_flip_prob']) else dix
+        # some sequence-level regularization & augmentation can be done here
+        if self.augment:
+            # occasionally flip the aa sequences back-to-front as a regularization technique 
+            dix = torch.flip(dix, [0]) if (random.random() < self.config['seq_flip_prob']) else dix
+
+            # TODO: possible to switch a small perentage of the amino acids with a 
+            # random amino acid or with the MASK token as a further regularization technique?
 
         # prepend the CLS token to the sequence
         dix = torch.cat((torch.tensor([self.stoi['CLS']], dtype=torch.long), dix))

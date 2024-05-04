@@ -10,11 +10,13 @@ import torch.nn.functional as F
 from einops.layers.torch import Rearrange
 from einops import repeat, rearrange
 from models.residual_mlp.residual_mlp import ResidualMLP
-from models.transformer_parts.transformer_parts import TransformerEncoder
+from models.transformer_parts.transformer_parts import TransformerEncoder, MLP_Head
 
 #----------------------------------------------------------
 # This is a simple transformer front-ending a residual-MLP
 # It operates on sequences of residues of block_size length
+# Regression is done via the usual class token added to the
+# start of the sequence
 #----------------------------------------------------------
 class TFormMLP(nn.Module):
     def __init__(self, config):
@@ -22,8 +24,9 @@ class TFormMLP(nn.Module):
         emb_dim   = config['emb_dim']
         self.block_size = config['block_size']
 
-        self.wte = nn.Embedding(config['vocab_size'], emb_dim) # token embedding
-        self.wpe = nn.Embedding(self.block_size, emb_dim) # position embedding 
+        self.token_embedding = nn.Embedding(config['vocab_size'], emb_dim) # token embedding
+        self.pos_embedding = nn.Parameter(torch.randn(1, self.block_size + 1, emb_dim))
+        self.class_embedding = nn.Parameter(torch.randn(1, 1, emb_dim))
         self.emb_dropout = nn.Dropout(p=config['emb_dropout'])
         self.transformer = TransformerEncoder(config['num_layers'], emb_dim, config['num_heads'], 
                                               config['dim_head'], config['tform_dropout'])
@@ -33,21 +36,16 @@ class TFormMLP(nn.Module):
         self.regression_head = ResidualMLP(config, emb_dim)
            
     def forward(self, x): 
-        device = x.device
-        b, t = x.size()
-        assert t <= self.block_size, f"Cannot forward sequence of length {t}, block size is only {self.block_size}"
-        pos = torch.arange(0, t, dtype=torch.long, device=device).unsqueeze(0) # shape (1, t) 
-
-        # Embeddings and dropout
-        tok_emb = self.wte(x)   # token embeddings of shape (b, t, n_embd)
-        pos_emb = self.wpe(pos) # position embeddings of shape (1, t, n_embd)
-        x = self.emb_dropout(tok_emb + pos_emb)
-
-        # Transformer block
+        b, n = x.shape
+        assert n <= self.block_size, f"Cannot forward sequence of length {n}, block size is only {self.block_size}"
+        tok_emb = self.token_embedding(x)   # token embeddings of shape (b, n, n_embd)
+        class_tokens = repeat(self.class_embedding, '() n d -> b n d', b = b)
+        embeddings = torch.cat((class_tokens, tok_emb), dim=1) # i.e. [b, n+1, dim]
+        embeddings += self.pos_embedding[:, :(n + 1)]
+        x = self.emb_dropout(embeddings)
         x = self.transformer(x)
         x = self.ln_f(x)
-        
-        logits = self.regression_head(x[:, 0, :])  # [b, 1, emb] just apply to the CLS token
+        logits = self.regression_head(x[:, 0, :])  # [b, 1, emb] just apply to the class token
         return logits 
 
 
@@ -69,7 +67,6 @@ class TFormMLP_Lightning(LightningModule):
         x, y = batch
         y_hat = self.model(x)
         loss = self.criteriion(y_hat, y)
-        # torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.config['grad_norm_clip'])
         return loss, y_hat, y
 
     def training_step(self, batch, batch_idx):
