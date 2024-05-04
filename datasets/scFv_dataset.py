@@ -66,8 +66,6 @@ class scFv_Dataset(Dataset):
         dix = torch.cat((torch.tensor([self.stoi['CLS']], dtype=torch.long), dix))
 
         # pad the end with PAD tokens if necessary
-        first_aa = 1 # first aa position in the sequence (after CLS)
-        last_aa = dix.shape[0] # last aa position in the sequence
         if dix.shape[0] < self.config['block_size']:
             dix = torch.cat((dix, torch.tensor([self.stoi['PAD']] * (self.config['block_size'] - len(dix)), dtype=torch.long)))
 

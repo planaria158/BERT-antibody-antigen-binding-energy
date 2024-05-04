@@ -2,18 +2,16 @@ import os
 import yaml
 import argparse
 import pytorch_lightning as pl
-import torch
 from torch.utils.data import DataLoader
-from torchvision.transforms.v2 import Compose, ToDtype, RandomHorizontalFlip, RandomVerticalFlip 
 from models.tform_mlp.tform_mlp import TFormMLP_Lightning
 from datasets.scFv_dataset import scFv_Dataset as dataset
 
 #----------------------------------------------------------------------
-# This file is for training the simple Transformer-residualMLP model
+# This file is for training the Transformer-residualMLP model
 #----------------------------------------------------------------------
 def train(args):
     # Read the config
-    config_path = './config/tform_mlp_params.yaml'  
+    config_path = '../config/tform_mlp_params.yaml'  
     with open(config_path, 'r') as file:
         try:
             config = yaml.safe_load(file)
@@ -27,15 +25,7 @@ def train(args):
     #----------------------------------------------------------
     # Load the dataset and dataloaders
     #----------------------------------------------------------
-    if config['apply_augmentation'] == True:
-        print('Applying augmentations to training data')
-        train_transforms = Compose([ToDtype(torch.float32, scale=False),
-                                    RandomHorizontalFlip(p=0.25)]) #,
-                                    # RandomVerticalFlip(p=0.25)])
-    else:
-        train_transforms = None
-    
-    train_dataset = dataset(config, config['train_data_path'], train_transforms)
+    train_dataset = dataset(config, config['train_data_path'])
     print(train_dataset.__len__())
     config['vocab_size'] = train_dataset.get_vocab_size()
     print('config[vocab_size]:', config['vocab_size'], ', config[block_size]:', config['block_size'])
@@ -77,7 +67,7 @@ def train(args):
     logger = TensorBoardLogger(save_dir=os.getcwd(), name=config['log_dir'], default_hp_metric=False)
 
     print('Using', config['accelerator'])
-    trainer = pl.Trainer(#strategy='ddp', 
+    trainer = pl.Trainer(strategy='ddp', 
                          accelerator=config['accelerator'], 
                          devices=config['devices'],
                          max_epochs=config['num_epochs'],   

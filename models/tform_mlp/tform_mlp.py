@@ -20,14 +20,16 @@ class TFormMLP(nn.Module):
     def __init__(self, config):
         super(TFormMLP, self).__init__()
         emb_dim   = config['emb_dim']
+        self.block_size = config['block_size']
+
         self.wte = nn.Embedding(config['vocab_size'], emb_dim) # token embedding
-        self.wpe = nn.Embedding(config['block_size'], emb_dim) # position embedding 
+        self.wpe = nn.Embedding(self.block_size, emb_dim) # position embedding 
         self.emb_dropout = nn.Dropout(p=config['emb_dropout'])
         self.transformer = TransformerEncoder(config['num_layers'], emb_dim, config['num_heads'], 
-                                              config['dim_head'], config['dropout'])
+                                              config['dim_head'], config['tform_dropout'])
         self.ln_f = nn.LayerNorm(emb_dim)
 
-        # The residual MLP regression head
+        # The residualMLP regression head
         self.regression_head = ResidualMLP(config, emb_dim)
            
     def forward(self, x): 
@@ -37,8 +39,8 @@ class TFormMLP(nn.Module):
         pos = torch.arange(0, t, dtype=torch.long, device=device).unsqueeze(0) # shape (1, t) 
 
         # Embeddings and dropout
-        tok_emb = self.transformer.wte(x)   # token embeddings of shape (b, t, n_embd)
-        pos_emb = self.transformer.wpe(pos) # position embeddings of shape (1, t, n_embd)
+        tok_emb = self.wte(x)   # token embeddings of shape (b, t, n_embd)
+        pos_emb = self.wpe(pos) # position embeddings of shape (1, t, n_embd)
         x = self.emb_dropout(tok_emb + pos_emb)
 
         # Transformer block
@@ -65,7 +67,6 @@ class TFormMLP_Lightning(LightningModule):
 
     def common_forward(self, batch, batch_idx):
         x, y = batch
-        x = x.float()
         y_hat = self.model(x)
         loss = self.criteriion(y_hat, y)
         # torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.config['grad_norm_clip'])
@@ -86,7 +87,7 @@ class TFormMLP_Lightning(LightningModule):
         self.y = []
 
     def predict_step(self, batch, batch_idx):
-        y_hat = self.forward(batch[0].float())
+        y_hat = self.forward(batch[0])
         self.y.extend(batch[1].cpu().numpy().tolist())
         self.preds.extend(y_hat.cpu().numpy().tolist())
         return

@@ -158,7 +158,7 @@ class BERT(nn.Module):
         pos_emb = self.transformer.wpe(pos) # position embeddings of shape (1, t, n_embd)
         x = self.transformer.drop(tok_emb + pos_emb)
 
-        # the Transormer parts
+        # the Transformer parts
         for block in self.transformer.h:
             x = block(x, mask)
         tform_out = self.transformer.ln_f(x)
