@@ -8,7 +8,7 @@ from torch import nn
 from pytorch_lightning.core import LightningModule
 
 #----------------------------------------------------------
-# Layer class for the MLP
+# Layer class for the ResidualMLP model
 #----------------------------------------------------------
 class Layer(nn.Module):
     def __init__(self, in_dim, out_dim, dropout=0.0, normalize=True, activation=True):
@@ -32,27 +32,26 @@ class ResidualMLP(nn.Module):
         super(ResidualMLP, self).__init__()
         print('Regression head is ResidualMLP')
         self.out_dim = input_dim  # output dim each layer. 
-        self.num_layers = 8 # hardwired number of layers. 
+        self.num_layers = 8       # hardwired number of layers. 
         self.in_dim = input_dim
 
-        #  may look something like this (depending on input_dim; ie input_dim = 248)
-        #  network_params: [[248,248], [248,248], [248,248], [248,248], [248,248], [248,248], [248,248], [248,1]]
+        #  may look something like this: (assuming input_dim = 248, for example)
+        #  layers: [[248,248], [248,248], [248,248], [248,248], [248,248], [248,248], [248,248], [248,1]]
         self.net = nn.ModuleList()
         in_dim = self.in_dim
         for idx in range(self.num_layers-1):
             print('making residual mlp layer in_dim, out_dim:', in_dim, self.out_dim)
             layer = Layer(in_dim, self.out_dim, config['mlp_dropout'])
             self.net.append(layer)
-            # in_dim = self.in_dim + self.out_dim
 
         # For regression, the very last Layer has no normalization or activation
-        print('making dense mlp layer in_dim, out_dim:', in_dim, 1)
+        print('making final dense mlp layer in_dim, out_dim:', in_dim, 1)
         layer = Layer(self.out_dim, 1, normalize=False, activation=False)
         self.net.append(layer)
 
     def forward(self, x_in):
         x = x_in
-        for i, layer in enumerate(self.net[:-1]):
+        for layer in self.net[:-1]:
             x = layer(x) + x
 
         logits = self.net[-1](x)

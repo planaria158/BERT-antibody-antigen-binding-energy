@@ -5,20 +5,11 @@ from torch.utils.data import Dataset
 import pandas as pd
 import numpy as np
 
-#--------------------------------------------------------
-# Code fragments taken from:
-# * https://github.com/barneyhill/minBERT
-# * https://github.com/karpathy/minGPT
-
-# protein sequence data taken from:
-# * https://www.nature.com/articles/s41467-023-39022-2
-# * https://zenodo.org/records/7783546
-#--------------------------------------------------------
-
+#-------------------------------------------------------------------------
+# Dataset class for scFv sequences
+# Emits pairs amino acid sequences and binding energies
+#-------------------------------------------------------------------------
 class scFv_Dataset(Dataset):
-    """
-    Emits batches of amino acid sequences and binding energies
-    """
     def __init__(self, config, csv_file_path, skiprows=0, inference=False):  
         super().__init__()
         self.config = config
@@ -27,13 +18,14 @@ class scFv_Dataset(Dataset):
         self.df = pd.read_csv(csv_file_path, skiprows=skiprows)
         
         # 20 naturally occuring amino acids in human proteins plus MASK token, 
-        # 'X' is a special token for unknown amino acids, and CLS token is for classification, and PAD for padding
-        self.chars = ['CLS', 'A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y', 'X', 'MASK', 'PAD']
+        # 'X' is a special token for unknown amino acids, CLS token is for classification, and PAD for padding
+        self.chars = ['CLS', 'A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 
+                      'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y', 'X', 'MASK', 'PAD']
         print('vocabulary:', self.chars)
-
         data_size, vocab_size = self.df.shape[0], len(self.chars)
         print('data has %d rows, %d vocab size (unique).' % (data_size, vocab_size))
 
+        # encoding and decoding residues
         self.stoi = { ch:i for i,ch in enumerate(self.chars) }
         self.itos = { i:ch for i,ch in enumerate(self.chars) }
         self.vocab_size = vocab_size
@@ -45,9 +37,11 @@ class scFv_Dataset(Dataset):
         return self.config['block_size']
 
     def __len__(self):
-        return self.df.shape[0] #len(self.data) - self.config['block_size']
+        return self.df.shape[0] 
 
-    """ Returns data, mask pairs used for Masked Language Model training """
+    """ 
+        Returns sequence, affinity pairs
+    """
     def __getitem__(self, idx):
         seq = self.df.loc[idx, 'sequence_a']
         affinity = self.df.loc[idx, 'Kd'] if self.inference == False else 0.0
@@ -55,17 +49,17 @@ class scFv_Dataset(Dataset):
         assert affinity >= 0.0, 'affinity cannot be negative'
 
         # get a randomly located block_size-1 substring from the sequence
-        # '-1' so we can prepend the CLS token to the start of the encoded string
+        # use the '-1' so we can prepend the CLS token to the start of the encoded string
         if len(seq) <= self.config['block_size']-1:
             chunk = seq
         else:
             start_idx = np.random.randint(0, len(seq) - (self.config['block_size'] - 1))
             chunk = seq[start_idx:start_idx + self.config['block_size']-1]
 
-        # encode every character
+        # encode the string
         dix = torch.tensor([self.stoi[s] for s in chunk], dtype=torch.long)
 
-        # Occasionally flip the aa sequences back-to-front to improve learning 
+        # occasionally flip the aa sequences back-to-front as a regularization technique 
         dix = torch.flip(dix, [0]) if (random.random() < self.config['seq_flip_prob']) else dix
 
         # prepend the CLS token to the sequence
@@ -76,24 +70,5 @@ class scFv_Dataset(Dataset):
         last_aa = dix.shape[0] # last aa position in the sequence
         if dix.shape[0] < self.config['block_size']:
             dix = torch.cat((dix, torch.tensor([self.stoi['PAD']] * (self.config['block_size'] - len(dix)), dtype=torch.long)))
-
-        # dix looks like: [[CLS], x1, x2, x3, ..., xN, [PAD], [PAD], ..., [PAD]]
-        # Never mask CLS or PAD tokens
-        mask = None
-        if self.config['mask_prob'] > 0:
-            # get number of tokens to mask
-            n_pred = max(1, int(round((last_aa - first_aa)*self.config['mask_prob'])))
-
-            # indices of the tokens that will be masked (a random selection of n_pred of the tokens)
-            masked_idx = torch.randperm(last_aa-1, dtype=torch.long, )[:n_pred]
-            masked_idx += 1  # so we never mask the CLS token
-
-            mask = torch.zeros_like(dix)
-
-            # copy the actual tokens to the mask
-            mask[masked_idx] = dix[masked_idx]
-            
-            # ... and overwrite them with MASK token in the data
-            dix[masked_idx] = self.stoi['MASK']
 
         return dix, torch.tensor([affinity], dtype=torch.float32) 

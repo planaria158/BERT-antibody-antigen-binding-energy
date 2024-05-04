@@ -27,9 +27,9 @@ def train(args):
     # Import the correct dataset
     #----------------------------------------------------------
     if config['image_channels'] == 1:
-        from datasets.cnn_dataset_bw import CNN_Dataset_BW as dataset
+        from datasets.image_dataset_bw import Image_Dataset_BW as dataset
     elif config['image_channels'] == 3:
-        from datasets.cnn_dataset_bgr import CNN_Dataset_BGR as dataset
+        from datasets.image_dataset_bgr import Image_Dataset_BGR as dataset
 
     #----------------------------------------------------------
     # Load the dataset and dataloaders

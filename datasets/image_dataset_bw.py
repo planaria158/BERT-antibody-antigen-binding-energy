@@ -6,11 +6,11 @@ import pandas as pd
 import numpy as np
 from datasets.scFv_dataset import scFv_Dataset
 
-#--------------------------------------------------------
+#--------------------------------------------------------------
 # Simple wrapper Dataset to turn output from the scFv dataset
-# into a B&W image for use in a CNN model
-#--------------------------------------------------------
-class CNN_Dataset_BW(Dataset):
+# into a single-channel image for use in image-based models
+#--------------------------------------------------------------
+class Image_Dataset_BW(Dataset):
     """
     Emits 2D B&W images and binding energies
     """
@@ -33,6 +33,10 @@ class CNN_Dataset_BW(Dataset):
     def _bin(self, x):
         return format(x, '08b')
 
+    # Input is a tensor of integers.
+    # Output is a tensor of binary encoded input tensor (over 8 bits)
+    # and reshaped into a [1, shape[0], shape[1]]) tensor
+    # everything that comes out of this method is 1's and 0's only
     def _encode_channel(self, x, shape):
         d = ''.join([self._bin(i) for i in x.numpy()])
         d = [int(x) for x in d] # turn d into a list of integers, one for each bit
@@ -41,13 +45,13 @@ class CNN_Dataset_BW(Dataset):
         t = t.unsqueeze(0) # add channel dimension
         return t
 
-    """ Returns image, kd pairs used for CNN training """
+    """ Returns image, kd pairs """
     def __getitem__(self, idx):
         dix, kd = self.scFv_dataset.__getitem__(idx)
         img = self._encode_channel(dix, self.img_shape) # all values are 0 or 1
 
-        if self.transform:
-            img = self.transform(img)
+        # if self.transform:
+        #     img = self.transform(img)
         
         # Normalize image [-1, 1]
         img = (img - 0.5)/0.5

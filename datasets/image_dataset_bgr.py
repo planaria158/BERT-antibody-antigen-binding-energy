@@ -6,11 +6,11 @@ import pandas as pd
 import numpy as np
 from datasets.scFv_dataset import scFv_Dataset
 
-#--------------------------------------------------------
+#--------------------------------------------------------------
 # Simple wrapper Dataset to turn output from the scFv dataset
-# into a B&W image for use in a CNN model
-#--------------------------------------------------------
-class CNN_Dataset_BGR(Dataset):
+# into a 3-channel image for use in image-based models
+#--------------------------------------------------------------
+class Image_Dataset_BGR(Dataset):
     """
     Emits 2D B&W images and binding energies
     """
@@ -25,7 +25,7 @@ class CNN_Dataset_BGR(Dataset):
         groups= ['none', 'nonpolar', 'nonpolar', 'neg', 'neg', 'nonpolar', 'nonpolar', 'pos', 'nonpolar', 'pos', 'nonpolar', 'nonpolar', 'neg', 
                 'nonpolar', 'neg', 'pos', 'polar', 'polar', 'nonpolar', 'nonpolar', 'polar', 'none', 'none', 'none']
         
-        # for VIT, since the residue encodings are spread over 8-bits, assign encodings to groups that spread across the 8-bits
+        # Since the residue encodings are spread over 8-bits, manually assign these encodings to span 8-bits
         group_encodings = { 'none'    : int('11001100', base=2), 
                             'polar'   : int('00110011', base=2),
                             'nonpolar': int('01100110', base=2), 
@@ -67,10 +67,9 @@ class CNN_Dataset_BGR(Dataset):
                                                 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
                                                 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]) 
         
-        self.mutation_freq_encoded = self.rel_mutation_freq * 255
-        self.mutation_freq_encoded = torch.ceil(self.mutation_freq_encoded).to(torch.long)
+        self.mutation_freq_encoded = torch.round(self.rel_mutation_freq * 255).to(torch.long)
         print('min mutation freq:', torch.min(self.mutation_freq_encoded), 'max mutation freq:', torch.max(self.mutation_freq_encoded))
-        print('some mutation_freq_encoded values:', self.mutation_freq_encoded[60:70])
+        print('a sample of some mutation_freq_encoded values:', self.mutation_freq_encoded[60:70])
         
     def get_vocab_size(self):
         return self.scFv_dataset.vocab_size
@@ -84,6 +83,10 @@ class CNN_Dataset_BGR(Dataset):
     def _bin(self, x):
         return format(x, '08b')
 
+    # Input is a tensor of integers.
+    # Output is a tensor of binary encoded input tensor (over 8 bits)
+    # and reshaped into a [1, shape[0], shape[1]]) tensor
+    # everything that comes out of this method is 1's and 0's only
     def _encode_channel(self, x, shape):
         d = ''.join([self._bin(val) for val in x])
         d = [int(x) for x in d] # turn d into a list of integers, one for each bit
@@ -91,32 +94,31 @@ class CNN_Dataset_BGR(Dataset):
         t = t.reshape(shape)
         return t
 
-    """ Returns image, Kd pairs used for CNN training """
+    """ Returns image, Kd pairs """
     def __getitem__(self, idx):
 
         dix, kd = self.scFv_dataset.__getitem__(idx)
 
-        # The residue encoding channel
+        # channel 1: the residue encoding channel
         ch_1 = self._encode_channel(dix, self.img_shape)
 
-        # The residue group encoding channel
+        # channel 2: the residue group encoding channel
         dix_grp = torch.tensor([self.i_to_grp[i] for i in dix.numpy().tolist()], dtype=torch.long)
         ch_2 = self._encode_channel(dix_grp, self.img_shape)
 
-        # The mutation frequency channel; anything not an amino acid gets a zero.
+        # channel 3: the mutation frequency channel
         ch3_in = torch.zeros_like(dix)
         # First aa is always position 1 (0 is a CLS token)
         ch3_in[1:len(self.mutation_freq_encoded)+1] = self.mutation_freq_encoded
         ch_3 = self._encode_channel(ch3_in, self.img_shape)
 
         # stack the 3 channels into a bgr image
-        bgr_img = torch.stack((ch_1, ch_2, ch_3), dim=0) * 255
+        bgr_img = torch.stack((ch_1, ch_2, ch_3), dim=0)
 
-        if self.transform:
-            bgr_img = self.transform(bgr_img)
+        # if self.transform:
+        #     bgr_img = self.transform(bgr_img)
             
         # Normalize image [-1, 1]
-        bgr_img = (bgr_img - 127.5)/127.5
-
+        bgr_img = (bgr_img - 0.5)/0.5
 
         return bgr_img, kd #, ch_1, ch_2, ch_3 
