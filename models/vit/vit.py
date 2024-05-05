@@ -9,7 +9,8 @@ from pytorch_lightning.core import LightningModule
 import torch.nn.functional as F
 from einops.layers.torch import Rearrange
 from einops import repeat, rearrange
-from models.transformer_parts.transformer_parts import TransformerEncoder, MLP_Head
+from models.transformer_parts.transformer_parts import TransformerEncoder
+from models.residual_mlp.residual_mlp import ResidualMLP
 
 
 class VIT(nn.Module):
@@ -28,6 +29,7 @@ class VIT(nn.Module):
 
         self.token_dim = patch_dim * patch_dim * config['image_channels']   # length of linearized patchs
         self.num_patches = ((img_shape[0]//patch_dim) * (img_shape[0]//patch_dim))
+        print('num_patches:', self.num_patches, ', token_dim:', self.token_dim)
 
         self.patch_embedding = nn.Sequential(
                                     Rearrange('b c (h p1) (w p2) -> b (h w) (p1 p2 c)', p1 = patch_dim, p2 = patch_dim),
@@ -37,8 +39,11 @@ class VIT(nn.Module):
         self.pos_embedding = nn.Parameter(torch.randn(1, self.num_patches + 1, emb_dim))
         self.emb_dropout = nn.Dropout(p=config['emb_dropout'])
         self.transformer_encoder = TransformerEncoder(config['num_layers'], emb_dim, config['num_heads'], 
-                                                      config['dim_head'], config['dropout'])
-        self.mlp_head = MLP_Head(emb_dim, 1)
+                                                      config['dim_head'], config['tform_dropout'])
+        # The residualMLP regression head
+        self.regression_head = ResidualMLP(config, emb_dim)
+        # self.mlp_head = MLP_Head(emb_dim, 1)
+
            
     def forward(self, imgs): 
         patch_emb = self.patch_embedding(imgs) # i.e. [b, 64, dim]
@@ -48,7 +53,7 @@ class VIT(nn.Module):
         embeddings += self.pos_embedding[:, :(n + 1)]
         x = self.emb_dropout(embeddings)
         x = self.transformer_encoder(x)
-        logits = self.mlp_head(x[:, 0, :])  # [b, 1] just apply to the CLS token
+        logits = self.regression_head(x[:, 0, :])  # [b, 1] just apply to the CLS token
         return logits 
 
 
@@ -88,13 +93,19 @@ class VIT_Lightning(LightningModule):
         return val_loss
     
     def on_predict_start(self):
+        self.inference_criterion = nn.MSELoss(reduction='none')
         self.preds = []
         self.y = []
+        self.loss = []
 
     def predict_step(self, batch, batch_idx):
+        # loss, y_hat, y = self.common_forward(batch, batch_idx)
         y_hat = self.forward(batch[0].float())
         self.y.extend(batch[1].cpu().numpy().tolist())
         self.preds.extend(y_hat.cpu().numpy().tolist())
+
+        loss = self.inference_criterion(y_hat, batch[1].float())
+        self.loss.extend(loss.cpu().numpy().tolist())
         return
 
     def on_predict_end(self):
@@ -108,6 +119,10 @@ class VIT_Lightning(LightningModule):
         filename = os.path.join(path, 'y_vit_' + str(time.time()) + '.pkl')      
         print('saving', len(self.y), 'y values to:', filename)
         pk.dump(self.y, open(filename, 'wb'))
+
+        filename = os.path.join(path, 'loss_vit_' + str(time.time()) + '.pkl')  
+        print('saving', len(self.loss), 'loss values to:', filename)
+        pk.dump(self.loss, open(filename, 'wb'))
         return 
 
     def configure_optimizers(self):

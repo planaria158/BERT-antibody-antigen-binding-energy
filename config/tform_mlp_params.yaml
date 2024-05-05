@@ -8,11 +8,11 @@ model_params:
 
   vocab_size]: 24    # 20 amino acids + special tokens (CLS, X, PAD, MASK)                 
 
-  seq_flip_prob: 0.1 # regularization: probability of flipping the sequence back-to-front
-  aa_mask_prob:  0.0 #0.05 # regularization: probability of masking an amino acid 
-                     # (this masks ~10-15 residues in seq of 242 if prob = 0.05)
+  apply_augmentation: True
+  seq_flip_prob:  0.1 # regularization: probability of flipping the sequence back-to-front
+  seq_mask_prob:  0.05 # regularization: probability of masking an amino acid 
+                       # (this masks ~10-15 residues in seq of 242 if prob = 0.05)
 
-  image_shape: [44,44]  
   num_heads: 8 
   dim_head: 64
   num_layers: 6
@@ -37,8 +37,8 @@ model_params:
   lr_gamma: 0.9995     # for exponential learning rate decay
   betas : [0.9, 0.95]
   checkpoint_every_n_train_steps : 100
-  save_top_k : 1
-  monitor: 'val_loss'
+  save_top_k : 50
+  monitor: 'loss'  #'val_loss'
   mode: 'min'
   log_every_nsteps: 10
 

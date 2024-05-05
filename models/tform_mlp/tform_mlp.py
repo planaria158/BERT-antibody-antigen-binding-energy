@@ -10,7 +10,7 @@ import torch.nn.functional as F
 from einops.layers.torch import Rearrange
 from einops import repeat, rearrange
 from models.residual_mlp.residual_mlp import ResidualMLP
-from models.transformer_parts.transformer_parts import TransformerEncoder, MLP_Head
+from models.transformer_parts.transformer_parts import TransformerEncoder
 
 class TFormMLP(nn.Module):
     """
@@ -109,11 +109,14 @@ class TFormMLP_Lightning(LightningModule):
     def on_predict_start(self):
         self.preds = []
         self.y = []
+        self.loss = []
 
     def predict_step(self, batch, batch_idx):
-        y_hat = self.forward(batch[0])
-        self.y.extend(batch[1].cpu().numpy().tolist())
+        loss, y_hat, y = self.common_forward(batch[0])
+        self.y.extend(y.cpu().numpy().tolist())
         self.preds.extend(y_hat.cpu().numpy().tolist())
+        self.loss.extend(loss.cpu().numpy().tolist())
+        self.log_dict({"loss": loss}, on_epoch=True, on_step=True, prog_bar=True, sync_dist=True)
         return
 
     def on_predict_end(self):
@@ -127,6 +130,10 @@ class TFormMLP_Lightning(LightningModule):
         filename = os.path.join(path, 'y_tform_mlp_' + str(time.time()) + '.pkl')      
         print('saving', len(self.y), 'y values to:', filename)
         pk.dump(self.y, open(filename, 'wb'))
+
+        filename = os.path.join(path, 'loss_tform_mlp_' + str(time.time()) + '.pkl')      
+        print('saving', len(self.loss), 'loss values to:', filename)
+        pk.dump(self.loss, open(filename, 'wb'))
         return 
 
     def configure_optimizers(self):

@@ -77,16 +77,11 @@ class scFv_Dataset(Dataset):
             dix = torch.flip(dix, [0]) if (random.random() < self.config['seq_flip_prob']) else dix
 
             # mask a small perentage of the amino acids with the MASK token
-            # TODO: under construction...
+            # acts like a dropout
             if self.config['seq_mask_prob'] > 0.0:
-                num_2_mask = max(1, (dix.shape[0])*self.config['mask_prob']) 
-                print('config[mask_prob]:', self.config['mask_prob'], ', num_2_mask:', num_2_mask)
+                num_2_mask = max(1, int(round((dix.shape[0])*self.config['seq_mask_prob'])))
                 masked_idx = torch.randperm((dix.shape[0]), dtype=torch.long)[:num_2_mask]
-                print('masked_idx values:', masked_idx)
                 dix[masked_idx] = self.stoi['MASK']
-                # TODO or could use a randomly chosen aa residue instead of MASK token?
-                # dix[masked_idx] = self.stoi[self.get_random_aa()]
-                # Nah! I think MASK is better token. It's more like dropout
 
         # prepend the CLS token to the sequence
         dix = torch.cat((torch.tensor([self.stoi['CLS']], dtype=torch.long), dix))

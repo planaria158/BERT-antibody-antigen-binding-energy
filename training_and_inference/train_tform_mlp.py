@@ -25,7 +25,7 @@ def train(args):
     #----------------------------------------------------------
     # Load the dataset and dataloaders
     #----------------------------------------------------------
-    train_dataset = dataset(config, config['train_data_path'], augment=True)
+    train_dataset = dataset(config, config['train_data_path'], augment=config['apply_augmentation'])
     print(train_dataset.__len__())
     config['vocab_size'] = train_dataset.get_vocab_size()
     print('config[vocab_size]:', config['vocab_size'], ', config[block_size]:', config['block_size'])
@@ -56,6 +56,7 @@ def train(args):
     # Training
     #--------------------------------------------------------------------
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
+        filename='{epoch}-{step}-{val_loss:.2f}-{loss:.2f}',
         save_top_k=config['save_top_k'],
         every_n_train_steps=config['checkpoint_every_n_train_steps'],
         save_on_train_epoch_end=True,
@@ -67,13 +68,13 @@ def train(args):
     logger = TensorBoardLogger(save_dir=os.getcwd(), name=config['log_dir'], default_hp_metric=False)
 
     print('Using', config['accelerator'])
-    trainer = pl.Trainer(strategy='ddp_find_unused_parameters_true', #'ddp', 
+    trainer = pl.Trainer(strategy='ddp', 
                          accelerator=config['accelerator'], 
                          devices=config['devices'],
                          max_epochs=config['num_epochs'],   
                          logger=logger, 
                          log_every_n_steps=config['log_every_nsteps'], 
-                         callbacks=[checkpoint_callback])   
+                         callbacks=[checkpoint_callback],)   
 
 
     trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=test_loader)

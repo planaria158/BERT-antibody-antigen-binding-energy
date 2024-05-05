@@ -4,7 +4,8 @@ import argparse
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 from datasets.scFv_dataset import scFv_Dataset as dataset
-from models.residual_mlp.residual_mlp import ResidualMLP_Lightning 
+from models.tform_mlp.tform_mlp import TFormMLP_Lightning 
+
 #----------------------------------------------------------------------
 # This file is for running inference on the Vision Transformer
 # model with the scFv dataset
@@ -12,7 +13,7 @@ from models.residual_mlp.residual_mlp import ResidualMLP_Lightning
 def train(args):
 
     # Read the config
-    config_path = './config/residual_mlp_params.yaml'  
+    config_path = '../config/tform_mlp_params.yaml'  
     with open(config_path, 'r') as file:
         try:
             config = yaml.safe_load(file)
@@ -26,20 +27,18 @@ def train(args):
     #----------------------------------------------------------
     # Load the dataset
     #----------------------------------------------------------
-    inference_data_path = config['inference_data_path']
-    inference_dataset = dataset(config, inference_data_path, inference=False) #inference=True)
+    inference_dataset = dataset(config, config['inference_data_path'], inference=False) #inference=True)
     print(inference_dataset.__len__())
     config['vocab_size'] = inference_dataset.get_vocab_size()
     print('config[vocab_size]:', config['vocab_size'], ', config[block_size]:', config['block_size'])
-    inference_loader = DataLoader(inference_dataset, shuffle=False, pin_memory=True, 
-                                  batch_size=config['batch_size'], num_workers=config['num_workers'])
+    inference_loader = DataLoader(inference_dataset, shuffle=False, pin_memory=True, batch_size=config['batch_size'], num_workers=config['num_workers'])
 
     #----------------------------------------------------------
     # Model
     #----------------------------------------------------------
     assert config['checkpoint_name'] != None, 'checkpoint_name is None'
     print('Loading pre-trained model from:', config['checkpoint_name'])
-    model = ResidualMLP_Lightning.load_from_checkpoint(checkpoint_path=config['checkpoint_name'], config=config)
+    model = TFormMLP_Lightning.load_from_checkpoint(checkpoint_path=config['checkpoint_name'], config=config)
     total_params = sum(param.numel() for param in model.parameters())
     print('Model has:', int(total_params), 'parameters')
 
@@ -50,7 +49,7 @@ def train(args):
     logger = TensorBoardLogger(save_dir=os.getcwd(), name=config['log_dir'], default_hp_metric=False)
 
     print('Using', config['accelerator'])
-    trainer = pl.Trainer(#strategy='ddp', 
+    trainer = pl.Trainer(strategy='ddp', 
                          accelerator=config['accelerator'], 
                          devices=config['devices'],
                          max_epochs=config['num_epochs'],   
@@ -61,9 +60,9 @@ def train(args):
     
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Arguments for residual_mlp_model')
+    parser = argparse.ArgumentParser(description='Arguments for tform_mlp_model')
     parser.add_argument('--config', dest='config_path',
-                        default='config/residual_mlp_params.yaml', type=str)
+                        default='config/tform_mlp_params.yaml', type=str)
     args = parser.parse_args()
     train(args)
 

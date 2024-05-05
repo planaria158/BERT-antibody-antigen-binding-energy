@@ -14,9 +14,9 @@ class Image_Dataset_BGR(Dataset):
     """
     Emits 2D B&W images and binding energies
     """
-    def __init__(self, config, csv_file_path, transform=None, skiprows=0, inference=False):  
+    def __init__(self, config, csv_file_path, transform=None, skiprows=0, inference=False, augment=False):  
         super().__init__()
-        self.scFv_dataset = scFv_Dataset(config, csv_file_path, skiprows, inference)
+        self.scFv_dataset = scFv_Dataset(config, csv_file_path, skiprows, inference, augment)
         self.config = config
         self.img_shape = config['image_shape']
         self.transform = transform

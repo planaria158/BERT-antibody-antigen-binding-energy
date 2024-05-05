@@ -6,44 +6,50 @@ model_params:
                      # This process clips off the last 5 residues of the protein sequence,
                      # but they are constant in all cases, so it should not affect the model
 
-  seq_flip_prob: 0.1 # regularization: probability of flipping the sequence back-to-front
-  apply_augmentation: False
+  vocab_size]: 24    # 20 amino acids + special tokens (CLS, X, PAD, MASK)                 
 
-  mask_prob: 0.0
+  apply_augmentation: False
+  seq_flip_prob: 0.1  # regularization: probability of flipping the sequence back-to-front
+  seq_mask_prob: 0.05 # regularization: probability of masking an amino acid with MASK token
+                      # (this masks ~10-15 residues in seq of 242 if prob = 0.05)
+  
   image_shape: [44,44]  
-  image_channels: 1     # 3:BGR, 1:grayscale
-  patch_dim: 2    #4       # 4x4 pixel patches
+  image_channels: 3  # 3:BGR, 1:grayscale
+  patch_dim: 4       # 4x4 pixel patches
   num_heads: 8 
-  dim_head: 32
+  dim_head: 64
   num_layers: 6
   emb_dim: 256  
-  dropout: 0.2
-  emb_dropout: 0.2
+  
+  tform_dropout: 0.1
+  emb_dropout: 0.1
+  mlp_dropout: 0.2
+
   
   accelerator : 'gpu'   # cpu, gpu, mps(macbook M2 chip)
-  devices: 2
-  batch_size: 64
+  devices: 1
+  batch_size: 384
   num_workers: 10
   grad_norm_clip : 1.0
-  num_epochs : 15000
-  log_dir : './lightning_logs/vit_model/cleaned-3/BW/'
+  num_epochs : 2500
+  log_dir : '../lightning_logs/vit_model/cleaned-3/BGR/'
   train_data_path: '/home/mark/dev/aAlphaBio-Homework/data/q_cleaned_3_train_set.csv'
   test_data_path:  '/home/mark/dev/aAlphaBio-Homework/data/q_cleaned_3_val_set.csv'
 
   # restart from checkpt
-  checkpoint_name: '/home/mark/dev/aAlphaBio-Homework/lightning_logs/vit_model/cleaned-3/BW/version_7/checkpoints/epoch=116-step=7700.ckpt'
-  learning_rate : 0.0001
-  lr_gamma: 0.9999     # exponential learning rate decay
+  checkpoint_name: '/home/mark/dev/aAlphaBio-Homework/lightning_logs/vit_model/cleaned-3/BGR/version_2/checkpoints/epoch=636-step=7000.ckpt'
+  learning_rate : 0.001
+  lr_gamma: 0.9995     # exponential learning rate decay
   betas : [0.9, 0.95]
   checkpoint_every_n_train_steps : 100
-  save_top_k : 1
+  save_top_k : 5
   monitor: 'val_loss'
   mode: 'min'
   log_every_nsteps: 10
 
-  # inference_data_path:  '/home/mark/dev/aAlphaBio-Homework/data/q_cleaned_3_val_set.csv'
+  inference_data_path:  '/home/mark/dev/aAlphaBio-Homework/data/q_cleaned_3_val_set.csv'
   # inference_data_path: '/Users/markthompson/Documents/dev/a-alphaBio-homework/data/alphaseq_data_hold_out.csv'
-  inference_results_folder: './inference_results/vit_model/cleaned-3/BW/'
+  inference_results_folder: '../inference_results/vit_model/cleaned-3/BGR/'
 
   seed : 3407
 

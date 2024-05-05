@@ -3,7 +3,6 @@ import yaml
 import argparse
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
-from datasets.image_dataset_bw import Image_Dataset_BW as dataset
 from models.vit.vit import VIT_Lightning
 
 #----------------------------------------------------------------------
@@ -13,7 +12,7 @@ from models.vit.vit import VIT_Lightning
 def train(args):
 
     # Read the config
-    config_path = './config/vit_params.yaml'  
+    config_path = '../config/vit_params.yaml'  
     with open(config_path, 'r') as file:
         try:
             config = yaml.safe_load(file)
@@ -25,9 +24,17 @@ def train(args):
     pl.seed_everything(config['seed'])
 
     #----------------------------------------------------------
+    # Import the correct dataset
+    #----------------------------------------------------------
+    if config['image_channels'] == 1:
+        from datasets.image_dataset_bw import Image_Dataset_BW as dataset
+    elif config['image_channels'] == 3:
+        from datasets.image_dataset_bgr import Image_Dataset_BGR as dataset
+
+    #----------------------------------------------------------
     # Load the dataset
     #----------------------------------------------------------
-    inference_dataset = dataset(config, config['inference_data_path'], inference=False) #inference=True)
+    inference_dataset = dataset(config, config['inference_data_path'], inference=False, augment=False) #inference=True)
     print(inference_dataset.__len__())
     config['vocab_size'] = inference_dataset.get_vocab_size()
     print('config[vocab_size]:', config['vocab_size'], ', config[block_size]:', config['block_size'])
@@ -49,7 +56,7 @@ def train(args):
     logger = TensorBoardLogger(save_dir=os.getcwd(), name=config['log_dir'], default_hp_metric=False)
 
     print('Using', config['accelerator'])
-    trainer = pl.Trainer(#strategy='ddp', 
+    trainer = pl.Trainer(strategy='ddp', 
                          accelerator=config['accelerator'], 
                          devices=config['devices'],
                          max_epochs=config['num_epochs'],   
