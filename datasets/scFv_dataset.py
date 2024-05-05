@@ -16,11 +16,11 @@ class scFv_Dataset(Dataset):
             inference: if True, the dataset is used for inference
             augment: if True, the dataset is used for training and data augmentation is applied
     """
-    def __init__(self, config, csv_file_path, skiprows=0, inference=False, augment=False):  
+    def __init__(self, config, csv_file_path, skiprows=0, inference=False, regularize=False):  
         super().__init__()
         self.config = config
         self.inference = inference
-        self.augment = augment # sequence flipping etc...
+        self.regularize = regularize # sequence flipping etc...
         print('reading the data from:', csv_file_path)
         self.df = pd.read_csv(csv_file_path, skiprows=skiprows)
         
@@ -72,7 +72,7 @@ class scFv_Dataset(Dataset):
         dix = torch.tensor([self.stoi[s] for s in chunk], dtype=torch.long)
 
         # some sequence-level regularization & augmentation can be done here
-        if self.augment:
+        if self.regularize:
             # occasionally flip the aa sequences back-to-front as a regularization technique 
             dix = torch.flip(dix, [0]) if (random.random() < self.config['seq_flip_prob']) else dix
 

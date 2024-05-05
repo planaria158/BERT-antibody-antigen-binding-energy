@@ -54,10 +54,9 @@ class TFormMLP(nn.Module):
         embeddings = torch.cat((class_tokens, tok_emb), dim=1) # i.e. [b, n+1, dim]
         embeddings += self.pos_embedding[:, :(n + 1)]
         x = self.emb_dropout(embeddings)
-        x = self.transformer(x)
-        # x = self.ln_f(x)
-        logits = self.regression_head(x[:, 0, :])  # [b, 1, emb] just apply to the class token
-        return logits 
+        tform_out = self.transformer(x)
+        logits = self.regression_head(tform_out[:, 0, :])  # [b, 1, emb] just apply to the class token
+        return logits, tform_out
 
 
 
@@ -92,7 +91,7 @@ class TFormMLP_Lightning(LightningModule):
 
     def common_forward(self, batch, batch_idx):
         x, y = batch
-        y_hat = self.model(x)
+        y_hat, _ = self.model(x)
         loss = self.criteriion(y_hat, y)
         return loss, y_hat, y
 

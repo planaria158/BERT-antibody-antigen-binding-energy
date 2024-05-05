@@ -33,16 +33,8 @@ def train(args):
 
     #----------------------------------------------------------
     # Load the dataset and dataloaders
-    #----------------------------------------------------------
-    if config['apply_augmentation'] == True:
-        print('Applying augmentations to training data')
-        train_transforms = Compose([ToDtype(torch.float32, scale=False),
-                                    RandomHorizontalFlip(p=0.25)]) #,
-                                    # RandomVerticalFlip(p=0.25)])
-    else:
-        train_transforms = None
-    
-    train_dataset = dataset(config, config['train_data_path'], train_transforms, augment=config['apply_augmentation'])
+    #----------------------------------------------------------    
+    train_dataset = dataset(config, config['train_data_path'], regularize=config['sequence_regularize'])
     print(train_dataset.__len__())
     config['vocab_size'] = train_dataset.get_vocab_size()
     print('config[vocab_size]:', config['vocab_size'], ', config[block_size]:', config['block_size'])

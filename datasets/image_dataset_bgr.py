@@ -115,9 +115,6 @@ class Image_Dataset_BGR(Dataset):
         # stack the 3 channels into a bgr image
         bgr_img = torch.stack((ch_1, ch_2, ch_3), dim=0)
 
-        # if self.transform:
-        #     bgr_img = self.transform(bgr_img)
-            
         # Normalize image [-1, 1]
         bgr_img = (bgr_img - 0.5)/0.5
 

@@ -1,35 +1,39 @@
 
 model_params:
-  block_size: 248    # max of 247 amino acids + CLS token (which hopefully is vestigal for this model)
-  seq_flip_prob: 0.0 #0.1 # regularization: probability of flipping the sequence back-to-front
-  mask_prob: 0.0
+  block_size: 248    # max of 247 amino acids + CLS token 
+  vocab_size]: 24    # 20 amino acids + special tokens (CLS, X, PAD, MASK)  
+
+  # augmentation at the sequence level, which occurs inside the dataset   
+  sequence_regularize: False
+  seq_flip_prob:  0.1 # regularization: probability of flipping the sequence back-to-front
+  seq_mask_prob:  0.05 # regularization: probability of masking an amino acid 
+                       # (this masks ~10-15 residues in seq of 242 if prob = 0.05)
+
   mlp_dropout : 0.2
-  accelerator : 'mps' # cpu, gpu, mps(macbook M2 chip)
+  accelerator : 'gpu'
   devices: 1
-  batch_size: 512
+  batch_size: 2048
   num_workers: 5
   grad_norm_clip : 1.0
   num_epochs : 10000
-  log_dir : './lightning_logs/residual_mlp_model/cleaned-3/'
-  train_data_path: '/Users/markthompson/Documents/dev/a-alphaBio-homework/data/q_cleaned_3_train_set.csv'
-  test_data_path:  '/Users/markthompson/Documents/dev/a-alphaBio-homework/data/q_cleaned_3_val_set.csv'
+  log_dir : '/home/mark/dev/aAlphaBio-Homework/lightning_logs/residual_mlp_model/cleaned-3/'
+  train_data_path: '/home/mark/dev/aAlphaBio-Homework/data/q_cleaned_3_train_set.csv'
+  test_data_path:  '/home/mark/dev/aAlphaBio-Homework/data/q_cleaned_3_val_set.csv'
 
-  inference_data_path: '/Users/markthompson/Documents/dev/a-alphaBio-homework/data/q_cleaned_3_val_set.csv'
-  # inference_data_path: '/Users/markthompson/Documents/dev/a-alphaBio-homework/data/alphaseq_data_hold_out.csv'
-
-  checkpoint_name: '/Users/markthompson/Documents/dev/a-alphaBio-homework/lightning_logs/residual_mlp_model/cleaned-3/version_2/checkpoints/epoch=7152-step=121600.ckpt' 
-
+  checkpoint_name: '/home/mark/dev/aAlphaBio-Homework/lightning_logs/residual_mlp_model/cleaned-3/version_2/checkpoints/epoch=3459-step=10380-val_loss=0.32-loss=0.28.ckpt' 
   learning_rate : 0.0001
-  lr_gamma: 0.9990     # for exponential learning rate decay
+  lr_gamma: 0.9995     # for exponential learning rate decay
   betas : [0.9, 0.95]
 
-  checkpoint_every_n_train_steps : 100
-  save_top_k : 1
+  checkpoint_every_n_train_steps : 3
+  save_top_k : 10
   monitor: 'val_loss'
   mode: 'min'
   log_every_nsteps: 10
 
-  inference_results_folder: './inference_results/residual_mlp/cleaned-3/'
-  
+  inference_data_path:  '/home/mark/dev/aAlphaBio-Homework/data/q_cleaned_3_val_set.csv'
+  # inference_data_path: '/Users/markthompson/Documents/dev/a-alphaBio-homework/data/alphaseq_data_hold_out.csv'
+  inference_results_folder: '/home/mark/dev/aAlphaBio-Homework/inference_results/residual_mlp_model/cleaned-3/'
+
   seed : 3407
 

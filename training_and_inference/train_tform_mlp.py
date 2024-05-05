@@ -25,12 +25,12 @@ def train(args):
     #----------------------------------------------------------
     # Load the dataset and dataloaders
     #----------------------------------------------------------
-    train_dataset = dataset(config, config['train_data_path'], augment=config['apply_augmentation'])
+    train_dataset = dataset(config, config['train_data_path'], regularize=config['sequence_regularize'])
     print(train_dataset.__len__())
     config['vocab_size'] = train_dataset.get_vocab_size()
     print('config[vocab_size]:', config['vocab_size'], ', config[block_size]:', config['block_size'])
 
-    test_dataset = dataset(config, config['test_data_path'], augment=False)
+    test_dataset = dataset(config, config['test_data_path'], regularize=False)
     print(test_dataset.__len__())
     
     train_loader = DataLoader(train_dataset, shuffle=True, pin_memory=True, batch_size=config['batch_size'], 

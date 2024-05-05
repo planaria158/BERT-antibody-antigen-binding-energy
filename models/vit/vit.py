@@ -42,7 +42,6 @@ class VIT(nn.Module):
                                                       config['dim_head'], config['tform_dropout'])
         # The residualMLP regression head
         self.regression_head = ResidualMLP(config, emb_dim)
-        # self.mlp_head = MLP_Head(emb_dim, 1)
 
            
     def forward(self, imgs): 

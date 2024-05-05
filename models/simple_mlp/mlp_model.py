@@ -6,66 +6,26 @@ import time
 import torch
 from torch import nn
 from pytorch_lightning.core import LightningModule
-
-#----------------------------------------------------------
-# Layer class for the MLP
-#----------------------------------------------------------
-class Layer(nn.Module):
-    def __init__(self, in_dim, out_dim, dropout=0.0, normalize=True, activation=True):
-        super(Layer, self).__init__()
-        self.normalize = normalize
-        self.activation = activation
-        self.linear = nn.Linear(in_dim, out_dim)
-        self.norm = nn.LayerNorm(out_dim) if normalize else nn.Identity()
-        self.dropout = nn.Dropout(dropout) if dropout > 0 else nn.Identity() 
-        self.activation = nn.ReLU() if activation else nn.Identity()
-
-    def forward(self, x):
-        out = self.dropout(self.activation(self.norm(self.linear(x))))
-        return out
+from models.transformer_parts.transformer_parts import MLP
 
 """
-    Vanilla MLP
-    The regular mlp is a 3-layer mlp: (TabTransformer paper)
-        input layer (input_dim, 4*input_dim)
-        hidden layer(4*input_dim, 2*input_dim)
-        output layer(2*input_dim, 1)
+    Pytorch Lightning Module that hosts a simple MLP model
+    and runs the training, validation, and testing loops
+
+    Args:
+        config: dictionary containing the configuration parameters
+            block_size: int, the size of the input block
+            mlp_dropout: float, the dropout rate for the MLP
+            learning_rate: float, the learning rate for the optimizer
+            betas: tuple, the betas for the optimizer
+            lr_gamma: float, the gamma for the scheduler
+            inference_results_folder: string, the folder where the inference results will be saved
 """
-class MLP(nn.Module):
-    def __init__(self, config, input_dim):
-        super(MLP, self).__init__()
-        print('Regression head is MLP')
-        mlp_hidden_mults = (4, 4, 3, 2) # hardwired 
-
-        hidden_dimensions = [input_dim * t for t in  mlp_hidden_mults]
-        all_dimensions = [input_dim, *hidden_dimensions, 1]
-        dims_pairs = list(zip(all_dimensions[:-1], all_dimensions[1:]))
-        layers = []
-        for ind, (in_dim, out_dim) in enumerate(dims_pairs):
-            print('making mlp. in_dim, out_dim:', in_dim, out_dim)
-            if ind >= (len(dims_pairs) - 1) :
-                # For regression, the very last Layer has no dropout, normalization, and activation
-                layer = Layer(in_dim, out_dim, normalize=False, activation=False)
-            else:
-                layer = Layer(in_dim, out_dim, config['mlp_dropout'])
-            
-            layers.append(layer)
-
-        self.net = nn.Sequential(*layers)
-
-    def forward(self, x_in):
-        return self.net(x_in) 
-
-    
-#----------------------------------------------------------
-# Pytorch Lightning Module that hosts a simple MLP model
-# and runs the training, validation, and testing loops
-#----------------------------------------------------------
 class MLP_Lightning(LightningModule):
     def __init__(self, config):
         super(MLP_Lightning, self).__init__()
         self.config = config
-        self.model = MLP(config, config['block_size'])
+        self.model = MLP(config['block_size'], config['mlp_dropout'])
         self.criteriion = nn.MSELoss()
         self.save_hyperparameters()
 
@@ -77,7 +37,6 @@ class MLP_Lightning(LightningModule):
         x = x.float()
         y_hat = self.model(x)
         loss = self.criteriion(y_hat, y)
-        # torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.config['grad_norm_clip'])
         return loss, y_hat, y
 
     def training_step(self, batch, batch_idx):
@@ -91,13 +50,18 @@ class MLP_Lightning(LightningModule):
         return val_loss
     
     def on_predict_start(self):
+        self.inference_criterion = nn.MSELoss(reduction='none')
         self.preds = []
         self.y = []
+        self.loss = []
 
     def predict_step(self, batch, batch_idx):
         y_hat = self.forward(batch[0].float())
         self.y.extend(batch[1].cpu().numpy().tolist())
         self.preds.extend(y_hat.cpu().numpy().tolist())
+
+        loss = self.inference_criterion(y_hat, batch[1].float())
+        self.loss.extend(loss.cpu().numpy().tolist())
         return
 
     def on_predict_end(self):
@@ -111,6 +75,10 @@ class MLP_Lightning(LightningModule):
         filename = os.path.join(path, 'y_mlp_' + str(time.time()) + '.pkl')      
         print('saving', len(self.y), 'y values to:', filename)
         pk.dump(self.y, open(filename, 'wb'))
+
+        filename = os.path.join(path, 'loss_mlp_' + str(time.time()) + '.pkl')  
+        print('saving', len(self.loss), 'loss values to:', filename)
+        pk.dump(self.loss, open(filename, 'wb'))
         return 
 
     def configure_optimizers(self):

@@ -118,24 +118,6 @@ class TransformerEncoder(nn.Module):
         return out
 
 
-class MLP_Head(nn.Module):
-    """
-        MLP Head
-
-        Args:
-            in_dim: int, input dimension
-            out_dim: int, output dimension
-    """
-    def __init__(self, in_dim, out_dim):
-        super().__init__()
-        self.head = nn.Sequential(nn.LayerNorm(in_dim), 
-                                  nn.Linear(in_dim, out_dim))
-        
-    def forward(self, x):
-        return self.head(x)
-    
-
-
 class Layer(nn.Module):
     """
         Layer : a single layer of the MLP used in transformer models
@@ -174,13 +156,13 @@ class MLP(nn.Module):
         output layer(2*input_dim, 1)
 
         Args:
-            config: dict, configuration dictionary
             input_dim: int, input dimension 
+            dropout: float, dropout rate
     """
-    def __init__(self, config, input_dim):
+    def __init__(self, input_dim, dropout):
         super(MLP, self).__init__()
 
-        mlp_hidden_mults = (4, 2) # hardwired with values from TabTransformer paper
+        mlp_hidden_mults = (4, 4, 3, 2) # fixed architecture 
 
         hidden_dimensions = [input_dim * t for t in  mlp_hidden_mults]
         all_dimensions = [input_dim, *hidden_dimensions, 1]
@@ -192,7 +174,7 @@ class MLP(nn.Module):
                 # For regression, the very last Layer has no dropout, normalization, and activation
                 layer = Layer(in_dim, out_dim, normalize=False, activation=False)
             else:
-                layer = Layer(in_dim, out_dim, config['regress_head_pdrop'], )
+                layer = Layer(in_dim, out_dim, dropout)
             
             layers.append(layer)
 

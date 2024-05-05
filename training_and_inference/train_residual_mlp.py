@@ -12,7 +12,7 @@ from models.residual_mlp.residual_mlp import ResidualMLP_Lightning
 def train(args):
 
     # Read the config
-    config_path = './config/residual_mlp_params.yaml'  
+    config_path = '../config/residual_mlp_params.yaml'  
     with open(config_path, 'r') as file:
         try:
             config = yaml.safe_load(file)
@@ -26,18 +26,18 @@ def train(args):
     #----------------------------------------------------------
     # Load the dataset
     #----------------------------------------------------------
-    train_dataset = dataset(config, config['train_data_path'])
+    train_dataset = dataset(config, config['train_data_path'], regularize=config['sequence_regularize'])
     print(train_dataset.__len__())
     config['vocab_size'] = train_dataset.get_vocab_size()
     print('config[vocab_size]:', config['vocab_size'], ', config[block_size]:', config['block_size'])
 
-    test_dataset = dataset(config, config['test_data_path'])
+    test_dataset = dataset(config, config['test_data_path'] , regularize=False)
     print(test_dataset.__len__())
     
-    train_loader = DataLoader(train_dataset, shuffle=True, pin_memory=True, batch_size=config['batch_size'], 
-                              num_workers=config['num_workers'], persistent_workers=True)
-    test_loader = DataLoader(test_dataset, shuffle=False, pin_memory=True, batch_size=config['batch_size'], 
-                             num_workers=5, persistent_workers=True)
+    train_loader = DataLoader(train_dataset, shuffle=True, pin_memory=True, 
+                              batch_size=config['batch_size'], num_workers=config['num_workers'])
+    test_loader = DataLoader(test_dataset, shuffle=False, pin_memory=True, 
+                             batch_size=config['batch_size'], num_workers=5)
 
     #----------------------------------------------------------
     # Model
@@ -62,7 +62,7 @@ def train(args):
     logger = TensorBoardLogger(save_dir=os.getcwd(), name=config['log_dir'], default_hp_metric=False)
 
     print('Using', config['accelerator'])
-    trainer = pl.Trainer(#strategy='ddp', 
+    trainer = pl.Trainer(strategy='ddp', 
                          accelerator=config['accelerator'], 
                          devices=config['devices'],
                          max_epochs=config['num_epochs'],   

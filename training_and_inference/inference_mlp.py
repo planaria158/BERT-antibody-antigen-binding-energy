@@ -12,7 +12,7 @@ from models.simple_mlp.mlp_model import MLP_Lightning
 def train(args):
 
     # Read the config
-    config_path = './config/mlp_params.yaml'  
+    config_path = '../config/mlp_params.yaml'  
     with open(config_path, 'r') as file:
         try:
             config = yaml.safe_load(file)
@@ -26,9 +26,7 @@ def train(args):
     #----------------------------------------------------------
     # Load the dataset
     #----------------------------------------------------------
-    # inference_data_path = '/home/mark/dev/aAlphaBio-Homework/data/alphaseq_data_hold_out.csv' 
-    inference_data_path = '/home/mark/dev/aAlphaBio-Homework/data/val_set.csv'
-    inference_dataset = dataset(config, inference_data_path, inference=False) #inference=True)
+    inference_dataset = dataset(config, config['inference_data_path'], inference=False) #inference=True)
     print(inference_dataset.__len__())
     config['vocab_size'] = inference_dataset.get_vocab_size()
     print('config[vocab_size]:', config['vocab_size'], ', config[block_size]:', config['block_size'])
