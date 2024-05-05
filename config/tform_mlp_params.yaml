@@ -13,17 +13,17 @@ model_params:
   seq_mask_prob:  0.05 # regularization: probability of masking an amino acid 
                        # (this masks ~10-15 residues in seq of 242 if prob = 0.05)
 
-  num_heads: 8 
+  num_heads: 10 #8 
   dim_head: 64
-  num_layers: 6
-  emb_dim: 256  
+  num_layers: 12 #6
+  emb_dim: 512 #256  
   tform_dropout: 0.1
   emb_dropout: 0.1
   mlp_dropout: 0.2
 
   accelerator : 'gpu'   # cpu, gpu, mps(macbook M2 chip)
   devices: 2
-  batch_size: 160
+  batch_size: 52
   num_workers: 10
   grad_norm_clip : 1.0
   num_epochs : 5000

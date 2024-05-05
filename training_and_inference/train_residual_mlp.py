@@ -50,6 +50,7 @@ def train(args):
     # Training
     #--------------------------------------------------------------------
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
+        filename='{epoch}-{step}-{val_loss:.2f}-{loss:.2f}',
         save_top_k=config['save_top_k'],
         every_n_train_steps=config['checkpoint_every_n_train_steps'],
         save_on_train_epoch_end=True,
