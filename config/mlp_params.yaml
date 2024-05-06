@@ -6,8 +6,8 @@ model_params:
   # augmentation at the sequence level, which occurs inside the dataset   
   sequence_regularize: True
   seq_flip_prob:  0.2 # regularization: probability of flipping the sequence back-to-front
-  seq_mask_prob:  0.10 # regularization: probability of masking an amino acid 
-                       # (this masks ~10-15 residues in seq of 242 if prob = 0.05)
+  seq_mask_prob:  0.1 # regularization: probability of masking an amino acid 
+                      # (this masks ~10-15 residues in seq of 242 if prob = 0.05)
 
   mlp_dropout : 0.25
   accelerator : 'gpu'
