@@ -1,50 +1,63 @@
 
 model_params:
-  block_size: 242    # max of 242 aa residues (no CLS or anything else)
+  block_size: 242    # max of 242 aa residues (no CLS token)
   vocab_size]: 24    # 20 amino acids + special tokens (CLS, X, PAD, MASK)                 
-
-  sequence_regularize: True
-  seq_flip_prob: 0.0  # regularization: probability of flipping the sequence back-to-front
-  seq_mask_prob: 0.05 # regularization: probability of masking an amino acid with MASK token
-                      # (this masks ~10-15 residues in seq of 242 if prob = 0.05)
-  
   image_shape: [44,44]  
-  image_channels: 3  # 3:BGR, 1:grayscale
+  image_channels: 1  # 3:BGR, 1:grayscale
   patch_dim: 4       # 4x4 pixel patches
   num_heads: 8 
   dim_head: 64
   num_layers: 6
   emb_dim: 256  
-  
-  tform_dropout: 0.15 #0.1
-  emb_dropout: 0.15 #0.1
-  mlp_dropout: 0.30 #0.2
 
+
+train_params:
+  sequence_regularize: True
+  seq_flip_prob: 0.0  # regularization: probability of flipping the sequence back-to-front
+  seq_mask_prob: 0.05 # regularization: probability of masking an amino acid with MASK token
+                      # (this masks ~10-15 residues in seq of 242 if prob = 0.05)
   
+  tform_dropout: 0.15
+  emb_dropout: 0.15
+  mlp_dropout: 0.30
   accelerator : 'gpu'   # cpu, gpu, mps(macbook M2 chip)
   devices: 2
   batch_size: 384
   num_workers: 10
   grad_norm_clip : 1.0
-  num_epochs : 2500
-  log_dir : '../lightning_logs/vit_model/cleaned-3b/BGR/test_no_cls_token/'
-  train_data_path: '/home/mark/dev/aAlphaBio-Homework/data/q_cleaned_3b_train_set.csv'
-  test_data_path:  '/home/mark/dev/aAlphaBio-Homework/data/q_cleaned_3b_val_set.csv'
+  num_epochs : 1000
+  log_dir :        '../lightning_logs/vit_model/cleaned-3b-data/'
+  train_data_path: '../data/q_cleaned_3b_train_set.csv'
+  val_data_path:   '../data/q_cleaned_3b_val_set.csv'
 
-  # restart from checkpt
   checkpoint_name: None
   learning_rate : 0.001
   lr_gamma: 0.9995     # exponential learning rate decay
   betas : [0.9, 0.95]
   checkpoint_every_n_train_steps : 100
-  save_top_k : 50
+  save_top_k : 5
   monitor: 'val_loss'
   mode: 'min'
   log_every_nsteps: 10
+  test_results_folder: '../test_results/vit_model/cleaned-3b-data/'
+  inference_results_folder: '../inference_results/vit_model/cleaned-3b-data/'
 
-  # inference_data_path:  '/home/mark/dev/aAlphaBio-Homework/data/q_cleaned_3b_test_set.csv'
-  # inference_data_path: '/Users/markthompson/Documents/dev/a-alphaBio-homework/data/alphaseq_data_hold_out.csv'
-  inference_results_folder: '../inference_results/vit_model/cleaned-3b/BGR/test_no_cls_token/'
+test_params:
+  accelerator : 'gpu' # cpu, gpu, mps(macbook M2 chip)
+  devices: 1
+  batch_size: 384
+  num_workers: 2
+  checkpoint_name: None 
+  test_data_path: '../data/q_cleaned_3b_test_set.csv'
 
-  seed : 3407
+inference_params:
+  accelerator : 'gpu' # cpu, gpu, mps(macbook M2 chip)
+  devices: 1
+  batch_size: 384
+  num_workers: 2
+  checkpoint_name: None 
+  inference_data_path: '../data/alphaseq_data_hold_out.csv'
+
+
+seed : 3407
 

@@ -22,25 +22,25 @@ class Image_Dataset_BW(Dataset):
             augment: if True, the dataset is used for training and data augmentation is applied
 
     """
-    def __init__(self, config, csv_file_path, transform=None, skiprows=0, inference=False, regularize=False):  
+    def __init__(self, config, img_shape, block_size, csv_file_path, transform=None, skiprows=0, inference=False, regularize=False):  
         super().__init__()
-        self.scFv_dataset = scFv_Dataset(config, csv_file_path, skiprows, inference, regularize)
+        self.scFv_dataset = scFv_Dataset(config, block_size, csv_file_path, skiprows, inference, regularize)
         self.config = config
-        self.img_shape = config['image_shape']
+        self.block_size = block_size
+        self.img_shape = img_shape
         self.transform = transform
         
     def get_vocab_size(self):
         return self.scFv_dataset.vocab_size
 
     def get_block_size(self):
-        return self.config['block_size']
+        return self.scFv_dataset.get_block_size()
 
     def __len__(self):
         return self.scFv_dataset.__len__()
 
     def _bin(self, x):
         return format(x, '08b')
-
 
     """
         Encodes a channel of the image

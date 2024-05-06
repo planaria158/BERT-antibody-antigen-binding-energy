@@ -44,7 +44,7 @@ class TFormMLP(nn.Module):
                                               config['dim_head'], config['tform_dropout'])
         
         # The residualMLP regression head
-        self.regression_head = ResidualMLP(config, emb_dim)
+        self.regression_head = ResidualMLP(config, emb_dim, num_layers=4)
            
     def forward(self, x): 
         b, n = x.shape

@@ -1,13 +1,16 @@
 
 import pickle as pk
+import json
 from pathlib import Path
 import os
 import time
+import math
+import numpy as np
 import torch
 from torch import nn
 from pytorch_lightning.core import LightningModule
 from models.transformer_parts.transformer_parts import MLP
-
+from training_and_inference.test_metrics import test_metrics
 """
     Pytorch Lightning Module that hosts a simple MLP model
     and runs the training, validation, and testing loops
@@ -22,10 +25,10 @@ from models.transformer_parts.transformer_parts import MLP
             inference_results_folder: string, the folder where the inference results will be saved
 """
 class MLP_Lightning(LightningModule):
-    def __init__(self, config):
+    def __init__(self, in_dim, config):
         super(MLP_Lightning, self).__init__()
         self.config = config
-        self.model = MLP(config['block_size'], config['mlp_dropout'])
+        self.model = MLP(in_dim, self.config['mlp_dropout'])
         self.criteriion = nn.MSELoss()
         self.save_hyperparameters()
 
@@ -48,20 +51,54 @@ class MLP_Lightning(LightningModule):
         val_loss, _, _ = self.common_forward(batch, batch_idx)
         self.log_dict({"val_loss": val_loss}, on_epoch=True, on_step=True, prog_bar=True, sync_dist=True)
         return val_loss
-    
-    def on_predict_start(self):
-        self.inference_criterion = nn.MSELoss(reduction='none')
+
+    #--------------------------------------------------------
+    # Test methods
+    #--------------------------------------------------------
+    def on_test_start(self):
         self.preds = []
         self.y = []
-        self.loss = []
+        self.metrics = None
+
+    def test_step(self, batch, batch_idx):
+        test_loss, y_hat, y = self.common_forward(batch, batch_idx)
+        self.log_dict({"test_loss": test_loss}, on_epoch=True, on_step=True, prog_bar=True, sync_dist=True)
+        self.y.extend(y.cpu().numpy().tolist())
+        self.preds.extend(y_hat.cpu().numpy().tolist())
+        return test_loss
+
+    def on_test_end(self):
+        assert(len(self.preds) == len(self.y))
+        self.metrics = test_metrics(self.y, self.preds)
+        print(self.metrics)
+
+        # save the metrics, preds, and y values to file
+        path = Path(self.config['test_results_folder'])
+        path.mkdir(parents=True, exist_ok=True)
+         
+        filename = os.path.join(path, 'metrics_mlp_' + str(time.time()) + '.txt')      
+        print('saving metrics to:', filename)
+        with open(filename, 'w') as out_file: 
+            out_file.write(json.dumps(self.metrics))
+
+        filename = os.path.join(path, 'preds_mlp_' + str(time.time()) + '.pkl')      
+        print('saving', len(self.preds), 'preds to:', filename)
+        pk.dump(self.preds, open(filename, 'wb'))
+
+        filename = os.path.join(path, 'y_mlp_' + str(time.time()) + '.pkl')      
+        print('saving', len(self.y), 'y values to:', filename)
+        pk.dump(self.y, open(filename, 'wb'))
+        return 
+    
+    #--------------------------------------------------------
+    # Inference methods
+    #--------------------------------------------------------
+    def on_predict_start(self):
+        self.preds = []
 
     def predict_step(self, batch, batch_idx):
         y_hat = self.forward(batch[0].float())
-        self.y.extend(batch[1].cpu().numpy().tolist())
         self.preds.extend(y_hat.cpu().numpy().tolist())
-
-        loss = self.inference_criterion(y_hat, batch[1].float())
-        self.loss.extend(loss.cpu().numpy().tolist())
         return
 
     def on_predict_end(self):
@@ -71,15 +108,7 @@ class MLP_Lightning(LightningModule):
         filename = os.path.join(path, 'preds_mlp_' + str(time.time()) + '.pkl')      
         print('saving', len(self.preds), 'preds to:', filename)
         pk.dump(self.preds, open(filename, 'wb'))
-
-        filename = os.path.join(path, 'y_mlp_' + str(time.time()) + '.pkl')      
-        print('saving', len(self.y), 'y values to:', filename)
-        pk.dump(self.y, open(filename, 'wb'))
-
-        filename = os.path.join(path, 'loss_mlp_' + str(time.time()) + '.pkl')  
-        print('saving', len(self.loss), 'loss values to:', filename)
-        pk.dump(self.loss, open(filename, 'wb'))
-        return 
+        return
 
     def configure_optimizers(self):
         lr = self.config['learning_rate']

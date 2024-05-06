@@ -3,6 +3,7 @@ model_params:
   block_size: 247    # 247 aa residues (no CLS or anything else)
   vocab_size]: 24    # 20 amino acids + special tokens (CLS, X, PAD, MASK)  
 
+train_params:
   # augmentation at the sequence level, which occurs inside the dataset   
   sequence_regularize: True
   seq_flip_prob:  0.2 # regularization: probability of flipping the sequence back-to-front
@@ -10,31 +11,42 @@ model_params:
                       # (this masks ~10-15 residues in seq of 242 if prob = 0.05)
 
   mlp_dropout : 0.25
-  accelerator : 'gpu'
+  accelerator : 'gpu' # cpu, gpu, mps(macbook M2 chip)
   devices: 2
   batch_size: 2048
   num_workers: 5
   grad_norm_clip : 1.0
-  num_epochs : 10000
-  log_dir : '/home/mark/dev/aAlphaBio-Homework/lightning_logs/mlp_model/cleaned-3/test_no_cls_token/'
-  train_data_path: '/home/mark/dev/aAlphaBio-Homework/data/q_cleaned_3b_train_set.csv'
-  test_data_path:  '/home/mark/dev/aAlphaBio-Homework/data/q_cleaned_3b_val_set.csv'
-
+  num_epochs : 5000
+  log_dir :        '../lightning_logs/mlp_model/cleaned-3b-data/'
+  train_data_path: '../data/q_cleaned_3b_train_set.csv'
+  val_data_path:   '../data/q_cleaned_3b_val_set.csv'
   checkpoint_name: None 
   learning_rate : 0.001
-  lr_gamma: 0.9995     # for exponential learning rate decay
+  lr_gamma: 0.9995    
   betas : [0.9, 0.95]
-
   checkpoint_every_n_train_steps : 3
   save_top_k : 10
   monitor: 'val_loss'
   mode: 'min'
   log_every_nsteps: 10
+  test_results_folder: '../test_results/mlp_model/cleaned-3b-data/'
+  inference_results_folder: '../inference_results/mlp_model/cleaned-3b-data/'
 
-  # inference_data_path:  '/home/mark/dev/aAlphaBio-Homework/data/q_cleaned_3b_test_set.csv'
-  # inference_data_path: '/Users/markthompson/Documents/dev/a-alphaBio-homework/data/alphaseq_data_hold_out.csv'
-  inference_results_folder: '/home/mark/dev/aAlphaBio-Homework/inference_results/mlp_model/cleaned-3/test_no_cls_token/'
+test_params:
+  accelerator : 'gpu' # cpu, gpu, mps(macbook M2 chip)
+  devices: 1
+  batch_size: 2048
+  num_workers: 2
+  checkpoint_name: '../lightning_logs/mlp_model/cleaned-3b-data/version_0/checkpoints/epoch=3787-step=7575-val_loss=0.41-loss=0.37.ckpt' 
+  test_data_path: '../data/q_cleaned_3b_test_set.csv'
 
+inference_params:
+  accelerator : 'gpu' # cpu, gpu, mps(macbook M2 chip)
+  devices: 1
+  batch_size: 2048
+  num_workers: 2
+  checkpoint_name: None 
+  inference_data_path: '../data/alphaseq_data_hold_out.csv'
 
-  seed : 3407
+seed : 3407
 

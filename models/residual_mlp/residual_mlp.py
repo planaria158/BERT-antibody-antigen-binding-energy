@@ -38,11 +38,11 @@ class ResidualMLP(nn.Module):
             config: dictionary of config parameters
             input_dim: input dimension
     """
-    def __init__(self, config, input_dim):
+    def __init__(self, config, input_dim, num_layers=4):
         super(ResidualMLP, self).__init__()
         print('Regression head is ResidualMLP')
         self.out_dim = input_dim  # output dim each layer. 
-        self.num_layers = 8       # hardwired number of layers. 
+        self.num_layers = num_layers      
         self.in_dim = input_dim
 
         #  may look something like this: (assuming input_dim = 248, for example)
@@ -86,7 +86,7 @@ class ResidualMLP_Lightning(LightningModule):
     def __init__(self, config):
         super(ResidualMLP_Lightning, self).__init__()
         self.config = config
-        self.model = ResidualMLP(config, config['block_size'])
+        self.model = ResidualMLP(config, config['block_size'], num_layers=4) # layer count is fixed at 4 for now
         self.criteriion = nn.MSELoss()
         self.save_hyperparameters()
 

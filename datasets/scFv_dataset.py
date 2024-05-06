@@ -16,9 +16,10 @@ class scFv_Dataset(Dataset):
             inference: if True, the dataset is used for inference
             regularize: if True, the dataset is used for training and data augmentation/regularization is applied
     """
-    def __init__(self, config, csv_file_path, skiprows=0, inference=False, regularize=False):  
+    def __init__(self, config, block_size, csv_file_path, skiprows=0, inference=False, regularize=False):  
         super().__init__()
         self.config = config
+        self.block_size = block_size
         self.inference = inference
         self.regularize = regularize # sequence flipping etc...
         print('reading the data from:', csv_file_path)
@@ -46,7 +47,7 @@ class scFv_Dataset(Dataset):
         return self.vocab_size
 
     def get_block_size(self):
-        return self.config['block_size']
+        return self.block_size
 
     def __len__(self):
         return self.df.shape[0] 
@@ -70,11 +71,11 @@ class scFv_Dataset(Dataset):
         assert Kd >= 0.0, 'affinity cannot be negative'
 
         # get a randomly located block_size substring from the sequence
-        if len(seq) <= self.config['block_size']:
+        if len(seq) <= self.block_size:
             chunk = seq
         else:
-            start_idx = np.random.randint(0, len(seq) - (self.config['block_size']))
-            chunk = seq[start_idx:start_idx + self.config['block_size']]
+            start_idx = np.random.randint(0, len(seq) - (self.block_size))
+            chunk = seq[start_idx:start_idx + self.block_size]
 
         # encode the string
         dix = torch.tensor([self.stoi[s] for s in chunk], dtype=torch.long)
@@ -100,7 +101,7 @@ class scFv_Dataset(Dataset):
         # dix = torch.cat((torch.tensor([self.stoi['CLS']], dtype=torch.long), dix))
 
         # pad the end with PAD tokens if necessary
-        if dix.shape[0] < self.config['block_size']:
-            dix = torch.cat((dix, torch.tensor([self.stoi['PAD']] * (self.config['block_size'] - len(dix)), dtype=torch.long)))
+        if dix.shape[0] < self.block_size:
+            dix = torch.cat((dix, torch.tensor([self.stoi['PAD']] * (self.block_size - len(dix)), dtype=torch.long)))
 
         return dix, torch.tensor([Kd], dtype=torch.float32) 

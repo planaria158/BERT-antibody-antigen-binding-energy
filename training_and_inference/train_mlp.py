@@ -9,8 +9,7 @@ from models.simple_mlp.mlp_model import MLP_Lightning
 #----------------------------------------------------------------------
 # This file is for training the simple MLP model
 #----------------------------------------------------------------------
-def train(args):
-
+def main():
     # Read the config
     config_path = '../config/mlp_params.yaml'  
     with open(config_path, 'r') as file:
@@ -19,31 +18,37 @@ def train(args):
         except yaml.YAMLError as exc:
             print(exc)
 
-    config = config['model_params']
-    print(config)
+    model_config = config['model_params']
+    train_config = config['train_params']    
+
+    print(model_config)
+    print(train_config)
     pl.seed_everything(config['seed'])
 
     #----------------------------------------------------------
     # Load the dataset
     #----------------------------------------------------------
-    train_dataset = dataset(config, config['train_data_path'], 
-                            regularize=config['sequence_regularize'])
-    print(train_dataset.__len__())
-    config['vocab_size'] = train_dataset.get_vocab_size()
-    print('config[vocab_size]:', config['vocab_size'], ', config[block_size]:', config['block_size'])
+    train_dataset = dataset(train_config, model_config['block_size'],
+                            train_config['train_data_path'], 
+                            regularize=train_config['sequence_regularize'])
 
-    test_dataset = dataset(config, config['test_data_path'] , regularize=False)
-    print(test_dataset.__len__())
+    val_dataset = dataset(train_config, model_config['block_size'],
+                          train_config['val_data_path'] , regularize=False)
+
+    print('length of training set:', train_dataset.__len__())
+    print('length of validation set:', val_dataset.__len__())
     
     train_loader = DataLoader(train_dataset, shuffle=True, pin_memory=True, 
-                              batch_size=config['batch_size'], num_workers=config['num_workers'])
-    test_loader = DataLoader(test_dataset, shuffle=False, pin_memory=True, 
-                             batch_size=config['batch_size'], num_workers=5)
+                              batch_size=train_config['batch_size'], 
+                              num_workers=train_config['num_workers'])
+    
+    val_loader = DataLoader(val_dataset, shuffle=False, pin_memory=True, 
+                            batch_size=train_config['batch_size'], num_workers=5)
 
     #----------------------------------------------------------
     # Model
     #----------------------------------------------------------
-    model = MLP_Lightning(config) 
+    model = MLP_Lightning(model_config['block_size'], train_config) 
     total_params = sum(param.numel() for param in model.parameters())
     print('Model has:', int(total_params), 'parameters')
 
@@ -52,33 +57,30 @@ def train(args):
     #--------------------------------------------------------------------
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
         filename='{epoch}-{step}-{val_loss:.2f}-{loss:.2f}',
-        save_top_k=config['save_top_k'],
-        every_n_train_steps=config['checkpoint_every_n_train_steps'],
+        save_top_k=train_config['save_top_k'],
+        every_n_train_steps=train_config['checkpoint_every_n_train_steps'],
         save_on_train_epoch_end=True,
-        monitor = config['monitor'],
-        mode = config['mode']
+        monitor = train_config['monitor'],
+        mode = train_config['mode']
     )
 
     from lightning.pytorch.loggers import TensorBoardLogger
-    logger = TensorBoardLogger(save_dir=os.getcwd(), name=config['log_dir'], default_hp_metric=False)
+    logger = TensorBoardLogger(save_dir=os.getcwd(), name=train_config['log_dir'], 
+                               default_hp_metric=False)
 
-    print('Using', config['accelerator'])
+    print('Using', train_config['accelerator'])
     trainer = pl.Trainer(strategy='ddp', 
-                         accelerator=config['accelerator'], 
-                         devices=config['devices'],
-                         max_epochs=config['num_epochs'],   
+                         accelerator=train_config['accelerator'], 
+                         devices=train_config['devices'],
+                         max_epochs=train_config['num_epochs'],   
                          logger=logger, 
-                         log_every_n_steps=config['log_every_nsteps'], 
+                         log_every_n_steps=train_config['log_every_nsteps'], 
                          callbacks=[checkpoint_callback])   
 
-    trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=test_loader)
-    
+    trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=val_loader)
+    print('Done!!')    
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Arguments for mlp_model')
-    parser.add_argument('--config', dest='config_path',
-                        default='config/mlp_params.yaml', type=str)
-    args = parser.parse_args()
-    train(args)
+    main()
 
 

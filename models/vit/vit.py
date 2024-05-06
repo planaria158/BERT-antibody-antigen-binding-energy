@@ -1,5 +1,6 @@
 
 import pickle as pk
+import json
 from pathlib import Path
 import os
 import time
@@ -11,6 +12,7 @@ from einops.layers.torch import Rearrange
 from einops import repeat, rearrange
 from models.transformer_parts.transformer_parts import TransformerEncoder
 from models.residual_mlp.residual_mlp import ResidualMLP
+from training_and_inference.test_metrics import test_metrics
 
 
 class VIT(nn.Module):
@@ -21,13 +23,13 @@ class VIT(nn.Module):
         Args:
             config: dict with configuration parameters
     """
-    def __init__(self, config):
+    def __init__(self, model_config, config):
         super(VIT, self).__init__()
-        patch_dim = config['patch_dim']
-        emb_dim   = config['emb_dim']
-        img_shape = config['image_shape']
+        patch_dim = model_config['patch_dim']
+        emb_dim   = model_config['emb_dim']
+        img_shape = model_config['image_shape']
 
-        self.token_dim = patch_dim * patch_dim * config['image_channels']   # length of linearized patchs
+        self.token_dim = patch_dim * patch_dim * model_config['image_channels']   # length of linearized patchs
         self.num_patches = ((img_shape[0]//patch_dim) * (img_shape[0]//patch_dim))
         print('num_patches:', self.num_patches, ', token_dim:', self.token_dim)
 
@@ -38,10 +40,10 @@ class VIT(nn.Module):
         self.class_embedding = nn.Parameter(torch.randn(1, 1, emb_dim))
         self.pos_embedding = nn.Parameter(torch.randn(1, self.num_patches + 1, emb_dim))
         self.emb_dropout = nn.Dropout(p=config['emb_dropout'])
-        self.transformer_encoder = TransformerEncoder(config['num_layers'], emb_dim, config['num_heads'], 
-                                                      config['dim_head'], config['tform_dropout'])
+        self.transformer_encoder = TransformerEncoder(model_config['num_layers'], emb_dim, model_config['num_heads'], 
+                                                      model_config['dim_head'], config['tform_dropout'])
         # The residualMLP regression head
-        self.regression_head = ResidualMLP(config, emb_dim)
+        self.regression_head = ResidualMLP(config, emb_dim, num_layers=4)
 
            
     def forward(self, imgs): 
@@ -63,10 +65,10 @@ class VIT_Lightning(LightningModule):
         Args:
             config: dict with configuration parameters
     """
-    def __init__(self, config):
+    def __init__(self, model_config, config):
         super(VIT_Lightning, self).__init__()
         self.config = config
-        self.model = VIT(config)
+        self.model = VIT(model_config, config)
         self.criteriion = nn.MSELoss()
         self.save_hyperparameters()
 
@@ -91,20 +93,54 @@ class VIT_Lightning(LightningModule):
         self.log_dict({"val_loss": val_loss}, on_epoch=True, on_step=True, prog_bar=True, sync_dist=True)
         return val_loss
     
-    def on_predict_start(self):
-        self.inference_criterion = nn.MSELoss(reduction='none')
+
+    #--------------------------------------------------------
+    # Test methods
+    #--------------------------------------------------------
+    def on_test_start(self):
         self.preds = []
         self.y = []
-        self.loss = []
+        self.metrics = None
+
+    def test_step(self, batch, batch_idx):
+        test_loss, y_hat, y = self.common_forward(batch, batch_idx)
+        self.log_dict({"test_loss": test_loss}, on_epoch=True, on_step=True, prog_bar=True, sync_dist=True)
+        self.y.extend(y.cpu().numpy().tolist())
+        self.preds.extend(y_hat.cpu().numpy().tolist())
+        return test_loss
+
+    def on_test_end(self):
+        assert(len(self.preds) == len(self.y))
+        self.metrics = test_metrics(self.y, self.preds)
+        print(self.metrics)
+
+        # save the metrics, preds, and y values to file
+        path = Path(self.config['test_results_folder'])
+        path.mkdir(parents=True, exist_ok=True)
+         
+        filename = os.path.join(path, 'metrics_vit_' + str(time.time()) + '.txt')      
+        print('saving metrics to:', filename)
+        with open(filename, 'w') as out_file: 
+            out_file.write(json.dumps(self.metrics))
+
+        filename = os.path.join(path, 'preds_vit_' + str(time.time()) + '.pkl')      
+        print('saving', len(self.preds), 'preds to:', filename)
+        pk.dump(self.preds, open(filename, 'wb'))
+
+        filename = os.path.join(path, 'y_vit_' + str(time.time()) + '.pkl')      
+        print('saving', len(self.y), 'y values to:', filename)
+        pk.dump(self.y, open(filename, 'wb'))
+        return 
+    
+    #--------------------------------------------------------
+    # Inference methods
+    #--------------------------------------------------------
+    def on_predict_start(self):
+        self.preds = []
 
     def predict_step(self, batch, batch_idx):
-        # loss, y_hat, y = self.common_forward(batch, batch_idx)
         y_hat = self.forward(batch[0].float())
-        self.y.extend(batch[1].cpu().numpy().tolist())
         self.preds.extend(y_hat.cpu().numpy().tolist())
-
-        loss = self.inference_criterion(y_hat, batch[1].float())
-        self.loss.extend(loss.cpu().numpy().tolist())
         return
 
     def on_predict_end(self):
@@ -114,15 +150,7 @@ class VIT_Lightning(LightningModule):
         filename = os.path.join(path, 'preds_vit_' + str(time.time()) + '.pkl')      
         print('saving', len(self.preds), 'preds to:', filename)
         pk.dump(self.preds, open(filename, 'wb'))
-
-        filename = os.path.join(path, 'y_vit_' + str(time.time()) + '.pkl')      
-        print('saving', len(self.y), 'y values to:', filename)
-        pk.dump(self.y, open(filename, 'wb'))
-
-        filename = os.path.join(path, 'loss_vit_' + str(time.time()) + '.pkl')  
-        print('saving', len(self.loss), 'loss values to:', filename)
-        pk.dump(self.loss, open(filename, 'wb'))
-        return 
+        return
 
     def configure_optimizers(self):
         lr = self.config['learning_rate']
