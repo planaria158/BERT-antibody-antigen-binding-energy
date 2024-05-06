@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 from models.vit.vit import VIT_Lightning
 
 #----------------------------------------------------------------------
-# This file is for training the simple VIT model
+# This file is for training the Vision Transformer model
 #----------------------------------------------------------------------
 def main():
     # Read the config
@@ -63,8 +63,8 @@ def main():
     if train_config['checkpoint_name'] != 'None':
         print('Restarting from checkpoint: ', train_config['checkpoint_name'])
         model = VIT_Lightning.load_from_checkpoint(checkpoint_path=train_config['checkpoint_name'], 
-                                                   config=model_config,
-                                                   train_config=train_config)
+                                                   model_config=model_config,
+                                                   config=train_config)
     else:
         print('Starting from new model instance')
         model = VIT_Lightning(model_config, train_config) 

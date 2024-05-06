@@ -10,7 +10,6 @@ model_params:
   num_layers: 6
   emb_dim: 256  
 
-
 train_params:
   sequence_regularize: True
   seq_flip_prob: 0.0  # regularization: probability of flipping the sequence back-to-front
@@ -47,7 +46,7 @@ test_params:
   devices: 1
   batch_size: 384
   num_workers: 2
-  checkpoint_name: None 
+  checkpoint_name: '../lightning_logs/vit_model/cleaned-3b-data/version_0/checkpoints/epoch=699-step=7700-val_loss=0.16-loss=0.12.ckpt' 
   test_data_path: '../data/q_cleaned_3b_test_set.csv'
 
 inference_params:

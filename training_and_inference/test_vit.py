@@ -11,7 +11,7 @@ from models.vit.vit import VIT_Lightning
 #----------------------------------------------------------------------
 def main():
     # Read the config
-    config_path = '../config/mlp_params.yaml'  
+    config_path = '../config/vit_params.yaml'  
     with open(config_path, 'r') as file:
         try:
             config = yaml.safe_load(file)
@@ -55,8 +55,8 @@ def main():
     if test_config['checkpoint_name'] != 'None':
         print('Restarting from checkpoint: ', test_config['checkpoint_name'])
         model = VIT_Lightning.load_from_checkpoint(checkpoint_path=test_config['checkpoint_name'], 
-                                                   config=model_config,
-                                                   train_config=train_config)
+                                                   model_config=model_config,
+                                                   config=train_config)
     else:
         print('Starting from new model instance')
         model = VIT_Lightning(model_config, train_config) 

@@ -1,5 +1,6 @@
 
 import pickle as pk
+import json
 from pathlib import Path
 import os
 import time
@@ -11,6 +12,7 @@ from einops.layers.torch import Rearrange
 from einops import repeat, rearrange
 from models.residual_mlp.residual_mlp import ResidualMLP
 from models.transformer_parts.transformer_parts import TransformerEncoder
+from training_and_inference.test_metrics import test_metrics
 
 class TFormMLP(nn.Module):
     """
@@ -21,6 +23,14 @@ class TFormMLP(nn.Module):
         This model consists of a front-end Transformer and a ResidualMLP regression head
 
         Args:
+            model_config: dictionary of model parameters containing the following keys:
+                'vocab_size': size of the vocabulary of residues
+                'emb_dim': dimension of the token embeddings
+                'block_size': length of the sequences to be processed
+                'num_layers': number of transformer layers
+                'num_heads': number of attention heads
+                'dim_head': dimension of the attention head
+
             config: dictionary of config parameters containing the following keys:
                 'vocab_size': size of the vocabulary of residues
                 'emb_dim': dimension of the token embeddings
@@ -31,17 +41,17 @@ class TFormMLP(nn.Module):
                 'tform_dropout': dropout rate for the transformer layers
                 'emb_dropout': dropout rate for the token embeddings
     """
-    def __init__(self, config):
+    def __init__(self, model_config, config):
         super(TFormMLP, self).__init__()
-        emb_dim   = config['emb_dim']
-        self.block_size = config['block_size']
+        emb_dim   = model_config['emb_dim']
+        self.block_size = model_config['block_size']
 
-        self.token_embedding = nn.Embedding(config['vocab_size'], emb_dim) # token embedding
+        self.token_embedding = nn.Embedding(model_config['vocab_size'], emb_dim) # token embedding
         self.pos_embedding = nn.Parameter(torch.randn(1, self.block_size + 1, emb_dim))
         self.class_embedding = nn.Parameter(torch.randn(1, 1, emb_dim))
         self.emb_dropout = nn.Dropout(p=config['emb_dropout'])
-        self.transformer = TransformerEncoder(config['num_layers'], emb_dim, config['num_heads'], 
-                                              config['dim_head'], config['tform_dropout'])
+        self.transformer = TransformerEncoder(model_config['num_layers'], emb_dim, model_config['num_heads'], 
+                                              model_config['dim_head'], config['tform_dropout'])
         
         # The residualMLP regression head
         self.regression_head = ResidualMLP(config, emb_dim, num_layers=4)
@@ -65,6 +75,14 @@ class TFormMLP_Lightning(LightningModule):
         Pytorch Lightning Module that hosts the TFormMLP model
 
         Args:
+            model_config: dictionary of model parameters containing the following keys:
+                'vocab_size': size of the vocabulary of residues
+                'emb_dim': dimension of the token embeddings
+                'block_size': length of the sequences to be processed
+                'num_layers': number of transformer layers
+                'num_heads': number of attention heads
+                'dim_head': dimension of the attention head
+
             config: dictionary of config parameters containing the following keys:
                 'vocab_size': size of the vocabulary of residues
                 'emb_dim': dimension of the token embeddings
@@ -79,10 +97,10 @@ class TFormMLP_Lightning(LightningModule):
                 'lr_gamma': gamma for the learning rate scheduler
                 'inference_results_folder': folder to save inference results
     """
-    def __init__(self, config):
+    def __init__(self, model_config, config):
         super(TFormMLP_Lightning, self).__init__()
         self.config = config
-        self.model = TFormMLP(config)
+        self.model = TFormMLP(model_config, config)
         self.criteriion = nn.MSELoss()
         self.save_hyperparameters()
 
@@ -105,20 +123,35 @@ class TFormMLP_Lightning(LightningModule):
         self.log_dict({"val_loss": val_loss}, on_epoch=True, on_step=True, prog_bar=True, sync_dist=True)
         return val_loss
     
-    def on_predict_start(self):
+    #--------------------------------------------------------
+    # Test methods
+    #--------------------------------------------------------
+    def on_test_start(self):
         self.preds = []
         self.y = []
+        self.metrics = None
 
-    def predict_step(self, batch, batch_idx):
-        y_hat, _ = self.forward(batch[0])
-        self.y.extend(batch[1].cpu().numpy().tolist())
+    def test_step(self, batch, batch_idx):
+        test_loss, y_hat, y = self.common_forward(batch, batch_idx)
+        self.log_dict({"test_loss": test_loss}, on_epoch=True, on_step=True, prog_bar=True, sync_dist=True)
+        self.y.extend(y.cpu().numpy().tolist())
         self.preds.extend(y_hat.cpu().numpy().tolist())
-        return
+        return test_loss
 
-    def on_predict_end(self):
-        # save the preds to file
-        path = Path(self.config['inference_results_folder'])
+    def on_test_end(self):
+        assert(len(self.preds) == len(self.y))
+        self.metrics = test_metrics(self.y, self.preds)
+        print(self.metrics)
+
+        # save the metrics, preds, and y values to file
+        path = Path(self.config['test_results_folder'])
         path.mkdir(parents=True, exist_ok=True)
+         
+        filename = os.path.join(path, 'metrics_tform_mlp_' + str(time.time()) + '.txt')      
+        print('saving metrics to:', filename)
+        with open(filename, 'w') as out_file: 
+            out_file.write(json.dumps(self.metrics))
+
         filename = os.path.join(path, 'preds_tform_mlp_' + str(time.time()) + '.pkl')      
         print('saving', len(self.preds), 'preds to:', filename)
         pk.dump(self.preds, open(filename, 'wb'))
@@ -127,6 +160,28 @@ class TFormMLP_Lightning(LightningModule):
         print('saving', len(self.y), 'y values to:', filename)
         pk.dump(self.y, open(filename, 'wb'))
         return 
+    
+    #--------------------------------------------------------
+    # Inference methods
+    #--------------------------------------------------------
+    def on_predict_start(self):
+        self.preds = []
+
+    def predict_step(self, batch, batch_idx):
+        y_hat = self.forward(batch[0].float())
+        self.preds.extend(y_hat.cpu().numpy().tolist())
+        return
+
+    def on_predict_end(self):
+        # save the preds to file
+        path = Path(self.config['inference_results_folder'])
+        path.mkdir(parents=True, exist_ok=True)
+        filename = os.path.join(path, 'preds_vit_' + str(time.time()) + '.pkl')      
+        print('saving', len(self.preds), 'preds to:', filename)
+        pk.dump(self.preds, open(filename, 'wb'))
+        return
+    
+    
 
     def configure_optimizers(self):
         lr = self.config['learning_rate']

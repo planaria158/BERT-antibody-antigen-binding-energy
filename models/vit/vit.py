@@ -25,6 +25,7 @@ class VIT(nn.Module):
     """
     def __init__(self, model_config, config):
         super(VIT, self).__init__()
+
         patch_dim = model_config['patch_dim']
         emb_dim   = model_config['emb_dim']
         img_shape = model_config['image_shape']

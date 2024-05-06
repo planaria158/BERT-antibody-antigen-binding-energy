@@ -7,7 +7,8 @@ from models.tform_mlp.tform_mlp import TFormMLP_Lightning
 from datasets.scFv_dataset import scFv_Dataset as dataset
 
 #----------------------------------------------------------------------
-# This file is for training the Transformer-residualMLP model
+# This file is for running the test set using Visual Transformer model
+# in the Lightning framework
 #----------------------------------------------------------------------
 def main():
     # Read the config
@@ -20,40 +21,32 @@ def main():
 
     model_config = config['model_params']
     train_config = config['train_params']    
+    test_config = config['test_params']    
 
     print(model_config)
     print(train_config)
+    print(test_config)
     pl.seed_everything(config['seed'])
 
     #----------------------------------------------------------
-    # Load the dataset and dataloaders
+    # Load the test dataset
     #----------------------------------------------------------
-    train_dataset = dataset(train_config, 
-                            model_config['block_size'],
-                            train_config['train_data_path'], 
-                            regularize=train_config['sequence_regularize'])
-
-    val_dataset = dataset(train_config, 
-                          model_config['block_size'],
-                          train_config['val_data_path'] , 
-                          regularize=False)
-
-    print('length of training set:', train_dataset.__len__())
-    print('length of validation set:', val_dataset.__len__())
+    test_dataset = dataset(train_config, model_config['block_size'],
+                           test_config['test_data_path'], 
+                           inference=False, regularize=False)
     
-    train_loader = DataLoader(train_dataset, shuffle=True, pin_memory=True, 
-                              batch_size=train_config['batch_size'], 
-                              num_workers=train_config['num_workers'])
-    
-    val_loader = DataLoader(val_dataset, shuffle=False, pin_memory=True, 
-                            batch_size=train_config['batch_size'], num_workers=5)
+    print('length of test set:', test_dataset.__len__())
+
+    test_loader = DataLoader(test_dataset, shuffle=False, pin_memory=True, 
+                             batch_size=train_config['batch_size'], 
+                             num_workers=train_config['num_workers'])
 
     #----------------------------------------------------------
     # Model
     #----------------------------------------------------------
     if train_config['checkpoint_name'] != 'None':
         print('Restarting from checkpoint: ', train_config['checkpoint_name'])
-        model = TFormMLP_Lightning.load_from_checkpoint(checkpoint_path=train_config['checkpoint_name'], 
+        model = TFormMLP_Lightning.load_from_checkpoint(checkpoint_path=test_config['checkpoint_name'], 
                                                         model_config=model_config,
                                                         config=train_config)
     else:
@@ -64,33 +57,21 @@ def main():
     print('Model has:', int(total_params), 'parameters')
 
     #--------------------------------------------------------------------
-    # Training
+    # Inference
     #--------------------------------------------------------------------
-    checkpoint_callback = pl.callbacks.ModelCheckpoint(
-        filename='{epoch}-{step}-{val_loss:.2f}-{loss:.2f}',
-        save_top_k=train_config['save_top_k'],
-        every_n_train_steps=train_config['checkpoint_every_n_train_steps'],
-        save_on_train_epoch_end=True,
-        monitor = train_config['monitor'],
-        mode = train_config['mode']
-    )
-
     from lightning.pytorch.loggers import TensorBoardLogger
     logger = TensorBoardLogger(save_dir=os.getcwd(), name=train_config['log_dir'], default_hp_metric=False)
 
-    print('Using', train_config['accelerator'])
+    print('Using', test_config['accelerator'])
     trainer = pl.Trainer(strategy='ddp', 
-                         accelerator=train_config['accelerator'], 
-                         devices=train_config['devices'],
-                         max_epochs=train_config['num_epochs'],   
+                         accelerator=test_config['accelerator'], 
+                         devices=test_config['devices'],
+                         max_epochs=1,   
                          logger=logger, 
-                         log_every_n_steps=train_config['log_every_nsteps'], 
-                         callbacks=[checkpoint_callback],)   
+                         log_every_n_steps=train_config['log_every_nsteps'])   
 
-
-    trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=val_loader)
+    trainer.test(model=model, dataloaders=test_loader)
     print('Done!!')
-    
 
 if __name__ == '__main__':
     main()
