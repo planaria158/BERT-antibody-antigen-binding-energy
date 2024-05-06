@@ -22,9 +22,9 @@ class Image_Dataset_BW(Dataset):
             augment: if True, the dataset is used for training and data augmentation is applied
 
     """
-    def __init__(self, config, csv_file_path, transform=None, skiprows=0, inference=False, augment=False):  
+    def __init__(self, config, csv_file_path, transform=None, skiprows=0, inference=False, regularize=False):  
         super().__init__()
-        self.scFv_dataset = scFv_Dataset(config, csv_file_path, skiprows, inference, augment)
+        self.scFv_dataset = scFv_Dataset(config, csv_file_path, skiprows, inference, regularize)
         self.config = config
         self.img_shape = config['image_shape']
         self.transform = transform
@@ -58,7 +58,7 @@ class Image_Dataset_BW(Dataset):
     def _encode_channel(self, x, shape):
         d = ''.join([self._bin(i) for i in x.numpy()])
         d = [int(x) for x in d] # turn d into a list of integers, one for each bit
-        t = torch.tensor(d[:(shape[0]*shape[1])], dtype=torch.float32) # this is for 46,46 matrix
+        t = torch.tensor(d[:(shape[0]*shape[1])], dtype=torch.float32) 
         t = t.reshape(shape)
         t = t.unsqueeze(0) # add channel dimension
         return t

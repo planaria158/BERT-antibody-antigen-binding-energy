@@ -60,13 +60,12 @@ class scFv_Dataset(Dataset):
         assert not math.isnan(affinity), 'affinity is nan'
         assert affinity >= 0.0, 'affinity cannot be negative'
 
-        # get a randomly located block_size-1 substring from the sequence
-        # use the '-1' so we can prepend the CLS token to the start of the encoded string
-        if len(seq) <= self.config['block_size']-1:
+        # get a randomly located block_size substring from the sequence
+        if len(seq) <= self.config['block_size']:
             chunk = seq
         else:
-            start_idx = np.random.randint(0, len(seq) - (self.config['block_size'] - 1))
-            chunk = seq[start_idx:start_idx + self.config['block_size']-1]
+            start_idx = np.random.randint(0, len(seq) - (self.config['block_size']))
+            chunk = seq[start_idx:start_idx + self.config['block_size']]
 
         # encode the string
         dix = torch.tensor([self.stoi[s] for s in chunk], dtype=torch.long)
@@ -79,12 +78,12 @@ class scFv_Dataset(Dataset):
             # mask a small perentage of the amino acids with the MASK token
             # acts like a dropout
             if self.config['seq_mask_prob'] > 0.0:
-                num_2_mask = max(1, int(round((dix.shape[0])*self.config['seq_mask_prob'])))
+                num_2_mask = max(0, int(round((dix.shape[0])*self.config['seq_mask_prob'])))
                 masked_idx = torch.randperm((dix.shape[0]), dtype=torch.long)[:num_2_mask]
                 dix[masked_idx] = self.stoi['MASK']
 
         # prepend the CLS token to the sequence
-        dix = torch.cat((torch.tensor([self.stoi['CLS']], dtype=torch.long), dix))
+        # dix = torch.cat((torch.tensor([self.stoi['CLS']], dtype=torch.long), dix))
 
         # pad the end with PAD tokens if necessary
         if dix.shape[0] < self.config['block_size']:
