@@ -106,19 +106,13 @@ class TFormMLP_Lightning(LightningModule):
         return val_loss
     
     def on_predict_start(self):
-        self.inference_criterion = nn.MSELoss(reduction='none')
         self.preds = []
         self.y = []
-        self.loss = []
 
     def predict_step(self, batch, batch_idx):
-        # loss, y_hat, y = self.common_forward(batch, batch_idx)
-        y_hat = self.forward(batch[0])
+        y_hat, _ = self.forward(batch[0])
         self.y.extend(batch[1].cpu().numpy().tolist())
         self.preds.extend(y_hat.cpu().numpy().tolist())
-
-        loss = self.inference_criterion(y_hat, batch[1].float())
-        self.loss.extend(loss.cpu().numpy().tolist())
         return
 
     def on_predict_end(self):
@@ -132,10 +126,6 @@ class TFormMLP_Lightning(LightningModule):
         filename = os.path.join(path, 'y_tform_mlp_' + str(time.time()) + '.pkl')      
         print('saving', len(self.y), 'y values to:', filename)
         pk.dump(self.y, open(filename, 'wb'))
-
-        filename = os.path.join(path, 'loss_tform_mlp_' + str(time.time()) + '.pkl')  
-        print('saving', len(self.loss), 'loss values to:', filename)
-        pk.dump(self.loss, open(filename, 'wb'))
         return 
 
     def configure_optimizers(self):

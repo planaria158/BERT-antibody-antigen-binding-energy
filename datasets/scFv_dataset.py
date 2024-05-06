@@ -14,7 +14,7 @@ class scFv_Dataset(Dataset):
             csv_file_path: path to the csv file
             skiprows: number of rows to skip at the beginning of the file
             inference: if True, the dataset is used for inference
-            augment: if True, the dataset is used for training and data augmentation is applied
+            regularize: if True, the dataset is used for training and data augmentation/regularization is applied
     """
     def __init__(self, config, csv_file_path, skiprows=0, inference=False, regularize=False):  
         super().__init__()
@@ -56,9 +56,18 @@ class scFv_Dataset(Dataset):
             Returns sequence, affinity pairs
         """
         seq = self.df.loc[idx, 'sequence_a']
-        affinity = self.df.loc[idx, 'Kd'] if self.inference == False else 0.0
-        assert not math.isnan(affinity), 'affinity is nan'
-        assert affinity >= 0.0, 'affinity cannot be negative'
+
+        if self.inference == False:
+            Kd = self.df.loc[idx, 'Kd']
+            # Kd_lower = self.df.loc[idx, 'Kd_lower_bound']
+            # Kd_upper = self.df.loc[idx, 'Kd_upper_bound']
+            assert not math.isnan(Kd), 'Kd is nan'
+            # assert not math.isnan(Kd_lower), 'Kd_lower is nan'
+            # assert not math.isnan(Kd_upper), 'Kd_upper is nan'
+        else:
+            Kd = 0 #Kd_lower = Kd_upper = 0.0
+
+        assert Kd >= 0.0, 'affinity cannot be negative'
 
         # get a randomly located block_size substring from the sequence
         if len(seq) <= self.config['block_size']:
@@ -82,6 +91,11 @@ class scFv_Dataset(Dataset):
                 masked_idx = torch.randperm((dix.shape[0]), dtype=torch.long)[:num_2_mask]
                 dix[masked_idx] = self.stoi['MASK']
 
+            # Choose a new value for Kd that is randomly chosen from [Kd_lower, Kd_upper]
+            # if random.random() < self.config['mod_kd_prob']:
+            #     Kd = random.uniform(Kd_lower, Kd_upper)
+
+
         # prepend the CLS token to the sequence
         # dix = torch.cat((torch.tensor([self.stoi['CLS']], dtype=torch.long), dix))
 
@@ -89,4 +103,4 @@ class scFv_Dataset(Dataset):
         if dix.shape[0] < self.config['block_size']:
             dix = torch.cat((dix, torch.tensor([self.stoi['PAD']] * (self.config['block_size'] - len(dix)), dtype=torch.long)))
 
-        return dix, torch.tensor([affinity], dtype=torch.float32) 
+        return dix, torch.tensor([Kd], dtype=torch.float32) 

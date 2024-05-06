@@ -13,9 +13,9 @@ model_params:
   dim_head: 64
   num_layers: 6
   emb_dim: 256  
-  tform_dropout: 0.1
-  emb_dropout: 0.1
-  mlp_dropout: 0.2
+  tform_dropout: 0.15 #0.1
+  emb_dropout: 0.15 #0.1
+  mlp_dropout: 0.30 #0.2
 
   accelerator : 'gpu'   # cpu, gpu, mps(macbook M2 chip)
   devices: 2
@@ -28,7 +28,7 @@ model_params:
   test_data_path:  '/home/mark/dev/aAlphaBio-Homework/data/q_cleaned_3b_val_set.csv'
 
   # restart from checkpt
-  checkpoint_name: None
+  checkpoint_name: None #'/home/mark/dev/aAlphaBio-Homework/lightning_logs/tform_mlp_model/cleaned-3/test_no_cls_token/version_1/checkpoints/epoch=435-step=10900-val_loss=0.14-loss=0.07.ckpt'
   learning_rate : 0.001
   lr_gamma: 0.9995     # for exponential learning rate decay
   betas : [0.9, 0.95]
@@ -38,7 +38,7 @@ model_params:
   mode: 'min'
   log_every_nsteps: 10
 
-  # inference_data_path:  '/home/mark/dev/aAlphaBio-Homework/data/q_cleaned_3b_test_set.csv'
+  inference_data_path:  '/home/mark/dev/aAlphaBio-Homework/data/q_cleaned_3b_test_set.csv'
   # inference_data_path: '/Users/markthompson/Documents/dev/a-alphaBio-homework/data/alphaseq_data_hold_out.csv'
   inference_results_folder: '/home/mark/dev/aAlphaBio-Homework/inference_results/tform_mlp_model/cleaned-3/test_no_cls_token/'
 

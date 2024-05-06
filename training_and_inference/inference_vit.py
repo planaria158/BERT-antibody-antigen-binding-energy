@@ -34,7 +34,7 @@ def train(args):
     #----------------------------------------------------------
     # Load the dataset
     #----------------------------------------------------------
-    inference_dataset = dataset(config, config['inference_data_path'], inference=False, augment=False) #inference=True)
+    inference_dataset = dataset(config, config['inference_data_path'], inference=False, regularize=False)
     print(inference_dataset.__len__())
     config['vocab_size'] = inference_dataset.get_vocab_size()
     print('config[vocab_size]:', config['vocab_size'], ', config[block_size]:', config['block_size'])
