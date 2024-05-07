@@ -32,6 +32,7 @@ Repository for this project: https://github.com/planaria158/aAlphaBio-Homework  
 | train-test-inference | scripts for train, test, and inference of the models    |
 | Analysis.ipynb       | notebook for misc. analysis    |
 | DataAnalysis.ipynb   | notebook used to create training sets from raw daya    |
+| Homework-aAlphaBio.pptx | PowerPoint slide deck for this study
 
 ----
 ## How to run training, test, inference jobs
@@ -40,8 +41,27 @@ Repository for this project: https://github.com/planaria158/aAlphaBio-Homework  
 - cd to the train-test-inference folder
 - run the desired script from the command line (no command line arguments needed)
 
+----
+## Config files
 
----
+The config files are divided into 4 main sections.  The contents should be largely self-explanatory
+- model_params
+- train_params
+- test_params
+- inference_params
+
+Some caveats however: 
+- All paths are relative to the train-test-inference folder
+- You may need to change `accelerator` and `devices` to suite your environment
+- `checkpoint_name`  Typically this is given as `None`
+    - 	training_params: checkpoint_name is given a specific value, the training job will restart from this checkpoint
+    -   test_params: indicates which checkpoint to use for test run
+    -   inference_params: indicates which checkpoint to use for inference run
+- All outputs from test and inference calcs are deposited in the stated folder(s) in their respective sections
+- The files are never overwritten, but are tagged with a trailing timestamp given as milliseconds since epoch
+
+
+----
 ## Pre-trained weights files locations
 
 | Model  | Dataset  | Weights file |
