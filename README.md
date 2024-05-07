@@ -49,6 +49,10 @@ Repository for this project: https://github.com/planaria158/aAlphaBio-Homework  
 ----
 ## How to run training, test, inference jobs
 
+You should be able to run these commands with no changes
+- Test....
+- Inference....
+
 - Edit the relevant config file
 - cd to the train-test-inference folder
 - run the desired script from the command line (no command line arguments needed)
