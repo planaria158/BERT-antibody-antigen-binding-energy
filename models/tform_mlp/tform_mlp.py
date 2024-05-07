@@ -1,6 +1,7 @@
 
 import pickle as pk
 import json
+import csv
 from pathlib import Path
 import os
 import time
@@ -12,7 +13,7 @@ from einops.layers.torch import Rearrange
 from einops import repeat, rearrange
 from models.residual_mlp.residual_mlp import ResidualMLP
 from models.transformer_parts.transformer_parts import TransformerEncoder
-from training_and_inference.test_metrics import test_metrics
+from train_test_inference.test_metrics import test_metrics
 
 class TFormMLP(nn.Module):
     """
@@ -108,7 +109,7 @@ class TFormMLP_Lightning(LightningModule):
         return self.model(x)
 
     def common_forward(self, batch, batch_idx):
-        x, y = batch
+        x, y, names = batch
         y_hat, _ = self.model(x)
         loss = self.criteriion(y_hat, y)
         return loss, y_hat, y
@@ -147,16 +148,17 @@ class TFormMLP_Lightning(LightningModule):
         path = Path(self.config['test_results_folder'])
         path.mkdir(parents=True, exist_ok=True)
          
-        filename = os.path.join(path, 'metrics_tform_mlp_' + str(time.time()) + '.txt')      
+        timestamp = str(time.time())
+        filename = os.path.join(path, 'metrics_tform_mlp_' + timestamp + '.txt')      
         print('saving metrics to:', filename)
         with open(filename, 'w') as out_file: 
             out_file.write(json.dumps(self.metrics))
 
-        filename = os.path.join(path, 'preds_tform_mlp_' + str(time.time()) + '.pkl')      
+        filename = os.path.join(path, 'preds_tform_mlp_' + timestamp + '.pkl')      
         print('saving', len(self.preds), 'preds to:', filename)
         pk.dump(self.preds, open(filename, 'wb'))
 
-        filename = os.path.join(path, 'y_tform_mlp_' + str(time.time()) + '.pkl')      
+        filename = os.path.join(path, 'y_tform_mlp_' + timestamp + '.pkl')      
         print('saving', len(self.y), 'y values to:', filename)
         pk.dump(self.y, open(filename, 'wb'))
         return 
@@ -166,19 +168,27 @@ class TFormMLP_Lightning(LightningModule):
     #--------------------------------------------------------
     def on_predict_start(self):
         self.preds = []
+        self.seq_name = []
 
     def predict_step(self, batch, batch_idx):
         y_hat, _ = self.forward(batch[0])
         self.preds.extend(y_hat.cpu().numpy().tolist())
+        self.seq_name.extend(batch[2])
         return
 
     def on_predict_end(self):
         # save the preds to file
         path = Path(self.config['inference_results_folder'])
         path.mkdir(parents=True, exist_ok=True)
-        filename = os.path.join(path, 'preds_vit_' + str(time.time()) + '.pkl')      
+        timestamp = str(time.time())
+        filename = os.path.join(path, 'preds_vit_' + timestamp + '.csv')      
         print('saving', len(self.preds), 'preds to:', filename)
-        pk.dump(self.preds, open(filename, 'wb'))
+        fields = ['name', 'pred_Kd']
+        rows = [{'name': self.seq_name[i], 'pred_Kd': self.preds[i][0]} for i in range(len(self.preds))]
+        with open(filename, 'w') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=fields)
+            writer.writeheader()
+            writer.writerows(rows)
         return
         
 

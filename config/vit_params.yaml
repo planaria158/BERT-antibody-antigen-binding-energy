@@ -46,9 +46,10 @@ test_params:
   devices: 1
   batch_size: 384
   num_workers: 2
-  checkpoint_name: '../lightning_logs/vit_model/cleaned-3b-data/3-channel/trained/checkpoints/epoch=445-step=4900-val_loss=0.13-loss=0.10.ckpt' 
+  checkpoint_name: '../lightning_logs/vit_model/cleaned-3b-data/3-channel/trained/checkpoints/epoch=445-step=4900-val_loss=0.13-loss=0.10.ckpt'
   test_data_path:  '../data/q_cleaned_3b_test_set.csv'
 
+# inference is not presently used for vit model
 inference_params:
   accelerator : 'gpu' # cpu, gpu, mps(macbook M2 chip)
   devices: 1

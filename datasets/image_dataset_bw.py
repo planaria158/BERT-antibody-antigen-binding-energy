@@ -65,10 +65,10 @@ class Image_Dataset_BW(Dataset):
 
     """ Returns image, kd pairs """
     def __getitem__(self, idx):
-        dix, kd = self.scFv_dataset.__getitem__(idx)
+        dix, kd, name = self.scFv_dataset.__getitem__(idx)
         img = self._encode_channel(dix, self.img_shape) # all values are 0 or 1
 
         # Normalize image [-1, 1]
         img = (img - 0.5)/0.5
 
-        return img, kd
+        return img, kd, name

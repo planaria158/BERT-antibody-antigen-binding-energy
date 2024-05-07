@@ -23,11 +23,11 @@ train_params:
   num_workers: 10
   grad_norm_clip : 1.0
   num_epochs : 1000
-  log_dir :        '../lightning_logs/tform_mlp_model/cleaned-1-data/'
-  train_data_path: '../data/q_cleaned_1_train_set.csv'
-  val_data_path:   '../data/q_cleaned_1_val_set.csv'
+  log_dir :        '../lightning_logs/tform_mlp_model/cleaned-4-data/'
+  train_data_path: '../data/q_cleaned_4_train_set.csv'
+  val_data_path:   '../data/q_cleaned_4_val_set.csv'
 
-  checkpoint_name: None 
+  checkpoint_name: None
   learning_rate : 0.001
   lr_gamma: 0.9995     # for exponential learning rate decay
   betas : [0.9, 0.95]
@@ -36,15 +36,15 @@ train_params:
   monitor: 'val_loss'  
   mode: 'min'
   log_every_nsteps: 10
-  test_results_folder:      '../test_results/tform_mlp_model/cleaned-1-data/'
-  inference_results_folder: '../inference_results/tform_mlp_model/cleaned-1-data/'
+  test_results_folder:      '../test_results/tform_mlp_model/cleaned-4-data/'
+  inference_results_folder: '../inference_results/tform_mlp_model/cleaned-4-data/'
 
 test_params:
   accelerator : 'gpu' # cpu, gpu, mps(macbook M2 chip)
   devices: 1
   batch_size: 160
   num_workers: 2
-  checkpoint_name: None
+  checkpoint_name: '../lightning_logs/tform_mlp_model/cleaned-4-data/trained/checkpoints/epoch=316-step=9800-val_loss=0.11-loss=0.05.ckpt' 
   test_data_path:  '../data/q_cleaned_4_test_set.csv'
 
 inference_params:
@@ -52,7 +52,7 @@ inference_params:
   devices: 1
   batch_size: 160
   num_workers: 2
-  checkpoint_name: None 
+  checkpoint_name:     '../lightning_logs/tform_mlp_model/cleaned-4-data/trained/checkpoints/epoch=316-step=9800-val_loss=0.11-loss=0.05.ckpt'  
   inference_data_path: '../data/alphaseq_data_hold_out.csv'
 
 seed : 3407

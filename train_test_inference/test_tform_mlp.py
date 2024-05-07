@@ -54,7 +54,7 @@ def main():
     print('Model has:', int(total_params), 'parameters')
 
     #--------------------------------------------------------------------
-    # Inference
+    # Test
     #--------------------------------------------------------------------
     from lightning.pytorch.loggers import TensorBoardLogger
     logger = TensorBoardLogger(save_dir=os.getcwd(), name=train_config['log_dir'], default_hp_metric=False)

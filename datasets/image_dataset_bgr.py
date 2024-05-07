@@ -98,7 +98,7 @@ class Image_Dataset_BGR(Dataset):
     """ Returns image, Kd pairs """
     def __getitem__(self, idx):
 
-        dix, kd = self.scFv_dataset.__getitem__(idx)
+        dix, kd, name = self.scFv_dataset.__getitem__(idx)
 
         # channel 1: the residue encoding channel
         ch_1 = self._encode_channel(dix, self.img_shape)
@@ -119,4 +119,4 @@ class Image_Dataset_BGR(Dataset):
         # Normalize image [-1, 1]
         bgr_img = (bgr_img - 0.5)/0.5
 
-        return bgr_img, kd #, ch_1, ch_2, ch_3 
+        return bgr_img, kd, name

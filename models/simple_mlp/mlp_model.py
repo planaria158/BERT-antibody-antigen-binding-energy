@@ -10,7 +10,8 @@ import torch
 from torch import nn
 from pytorch_lightning.core import LightningModule
 from models.transformer_parts.transformer_parts import MLP
-from training_and_inference.test_metrics import test_metrics
+from train_test_inference.test_metrics import test_metrics
+
 """
     Pytorch Lightning Module that hosts a simple MLP model
     and runs the training, validation, and testing loops
@@ -36,7 +37,7 @@ class MLP_Lightning(LightningModule):
         return self.model(x)
 
     def common_forward(self, batch, batch_idx):
-        x, y = batch
+        x, y, names = batch
         x = x.float()
         y_hat = self.model(x)
         loss = self.criteriion(y_hat, y)
@@ -75,17 +76,18 @@ class MLP_Lightning(LightningModule):
         # save the metrics, preds, and y values to file
         path = Path(self.config['test_results_folder'])
         path.mkdir(parents=True, exist_ok=True)
-         
-        filename = os.path.join(path, 'metrics_mlp_' + str(time.time()) + '.txt')      
+        
+        timestamp = str(time.time())
+        filename = os.path.join(path, 'metrics_mlp_' + timestamp + '.txt')      
         print('saving metrics to:', filename)
         with open(filename, 'w') as out_file: 
             out_file.write(json.dumps(self.metrics))
 
-        filename = os.path.join(path, 'preds_mlp_' + str(time.time()) + '.pkl')      
+        filename = os.path.join(path, 'preds_mlp_' + timestamp + '.pkl')      
         print('saving', len(self.preds), 'preds to:', filename)
         pk.dump(self.preds, open(filename, 'wb'))
 
-        filename = os.path.join(path, 'y_mlp_' + str(time.time()) + '.pkl')      
+        filename = os.path.join(path, 'y_mlp_' + timestamp + '.pkl')      
         print('saving', len(self.y), 'y values to:', filename)
         pk.dump(self.y, open(filename, 'wb'))
         return 
@@ -105,7 +107,8 @@ class MLP_Lightning(LightningModule):
         # save the preds to file
         path = Path(self.config['inference_results_folder'])
         path.mkdir(parents=True, exist_ok=True)
-        filename = os.path.join(path, 'preds_mlp_' + str(time.time()) + '.pkl')      
+        timestamp = str(time.time())
+        filename = os.path.join(path, 'preds_mlp_' + timestamp + '.pkl')      
         print('saving', len(self.preds), 'preds to:', filename)
         pk.dump(self.preds, open(filename, 'wb'))
         return

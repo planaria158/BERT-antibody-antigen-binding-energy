@@ -58,15 +58,14 @@ class scFv_Dataset(Dataset):
         """
         seq = self.df.loc[idx, 'sequence_a']
 
-        if self.inference == False:
+        # apologies: next couple lines are overly dataset-specific
+        if self.inference == False: # training or test mode
             Kd = self.df.loc[idx, 'Kd']
-            # Kd_lower = self.df.loc[idx, 'Kd_lower_bound']
-            # Kd_upper = self.df.loc[idx, 'Kd_upper_bound']
             assert not math.isnan(Kd), 'Kd is nan'
-            # assert not math.isnan(Kd_lower), 'Kd_lower is nan'
-            # assert not math.isnan(Kd_upper), 'Kd_upper is nan'
+            name = 'none'
         else:
-            Kd = 0 #Kd_lower = Kd_upper = 0.0
+            Kd = 0 # inference mode - Kd is not available
+            name = self.df.loc[idx, 'description_a']
 
         assert Kd >= 0.0, 'affinity cannot be negative'
 
@@ -104,4 +103,4 @@ class scFv_Dataset(Dataset):
         if dix.shape[0] < self.block_size:
             dix = torch.cat((dix, torch.tensor([self.stoi['PAD']] * (self.block_size - len(dix)), dtype=torch.long)))
 
-        return dix, torch.tensor([Kd], dtype=torch.float32) 
+        return dix, torch.tensor([Kd], dtype=torch.float32), name
