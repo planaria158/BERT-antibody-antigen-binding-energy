@@ -33,7 +33,7 @@ train_params:
   inference_results_folder: '../inference_results/mlp_model/cleaned-3b-data/'
 
 test_params:
-  accelerator : 'gpu' # cpu, gpu, mps(macbook M2 chip)
+  accelerator : 'cpu' # cpu, gpu, mps(macbook M2 chip)
   devices: 1
   batch_size: 2048
   num_workers: 2

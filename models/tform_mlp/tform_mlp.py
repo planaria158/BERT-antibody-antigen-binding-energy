@@ -181,7 +181,7 @@ class TFormMLP_Lightning(LightningModule):
         path = Path(self.config['inference_results_folder'])
         path.mkdir(parents=True, exist_ok=True)
         timestamp = str(time.time())
-        filename = os.path.join(path, 'preds_vit_' + timestamp + '.csv')      
+        filename = os.path.join(path, 'preds_tform_mlp_' + timestamp + '.csv')      
         print('saving', len(self.preds), 'preds to:', filename)
         fields = ['name', 'pred_Kd']
         rows = [{'name': self.seq_name[i], 'pred_Kd': self.preds[i][0]} for i in range(len(self.preds))]

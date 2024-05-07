@@ -4,21 +4,22 @@
 # A-Alpha Bio homework submitted by Mark Thompson. May 7, 2024
 
 
-Purpose:
-This study outlines creating regression models to predict binding affinites from sequence data for single-chain variable regions of human immunoglobins 
+## Overview:
+This study outlines creating and training regression models to predict binding affinites from sequence data for single-chain variable regions of human immunoglobulins. 
 
-Repository for this project: https://github.com/planaria158/aAlphaBio-Homework  (I'll need to make sure it's public)
-
+----
+### The Inference file that I have submitted for grading can be found here
+`./inference_results/tform_mlp_model/cleaned-4-data/preds_tform_mlp_1715104590.5575511.csv`
 
 <p align="left">
-<img src="./images/predictions.png" alt="drawing" width="600"/>
+<img src="./images/predictions.png" alt="drawing" width="700"/>
 </p>
 
 ----
 ## Model architectures
 
 <p align="left">
-  <img src="./images/model_architectures.png" alt="drawing" width="600"/>
+  <img src="./images/model_architectures.png" alt="drawing" width="700"/>
 </p>
 
 
@@ -33,36 +34,45 @@ Repository for this project: https://github.com/planaria158/aAlphaBio-Homework  
 
 | folder / file  | Contents  |
 |:----------|:----------|
-| config               | configuration files for the models    |
-| data                 | raw and processed data    |
-| datasets             | dataset classes    |
-| inference_results    | results of running inference on holdout set    |
-| lightning_logs       | all training logs and checkpoints    |
-| misc_analysis        | misc files generated in t-SNE and related..    |
-| models               | model classes    |
-| test_results         | results of all test runs    |
-| train_test_inference | scripts for train, test, and inference of the models    |
-| Analysis.ipynb       | notebook for misc. analysis and t-SNE plots   |
-| DataAnalysis.ipynb   | notebook used to create training sets from raw daya    |
-| Homework-aAlphaBio.pptx | PowerPoint slide deck for this study
+| ./config               | configuration files for the models    |
+| ./data                 | raw and processed data    |
+| ./datasets             | dataset classes    |
+| ./images               | images for the README file |
+| ./inference_results    | results of running inference on holdout set    |
+| ./lightning_logs       | all training logs and checkpoints    |
+| ./misc_analysis        | misc files generated in t-SNE and related..    |
+| ./models               | model classes    |
+| ./test_results         | results of all test runs    |
+| ./train_test_inference | scripts for train, test, and inference of the models    |
+| ./Analysis.ipynb       | notebook for misc. analysis and t-SNE plots   |
+| ./DataAnalysis.ipynb   | notebook used to create training sets from raw daya    |
+| ./Homework-aAlphaBio.pptx | PowerPoint slide deck for this study |
+| ./README.md | this file |
 
 ----
-## How to run training, test, inference jobs
+## How to run training, test, and inference jobs
 
-You should be able to run these commands with no changes
-- Test....
-- Inference....
+Just to verify some of this code, you should be able to run this commands from the command line with no changes
+- first cd to the ./train_test_inference folder
+- `python test_mlp.py`   (the mlp_params.yaml file already points to the proper checkpoint and is set up to run on the cpu)
 
-- Edit the relevant config file
-- cd to the train-test-inference folder
-- run the desired script from the command line (no command line arguments needed)
+### Overall architecture of running commands
+- Train and test scripts exist for each individual model (in ./train_test_inference/ folder) 
+- You run these from the command line inside this folder
+- All paths in the config files (./config) are relative to this folder
+- A single inference script (inference_tform_mlp.py) is also in this folder
+    - I made only a single inference script for the Transformer model since it was used for final predictions
+- A command will run, drawing on code from the ./datasets and ./models folders.  Output files will be written to the locations specified in the config files
 
-An inconveniente source of human error when editing the config files.....
-
-Files produced
-- training: xxxx
-- testing: xxxx
-- inference: xxxx
+### Files produced
+- training 
+    - log files, checkpoint files, etc are saved in the log_dir specified in the config file
+- testing
+    - metrics_xxx.txt : a text file of all the error analysis done
+    - preds_xxx.pkl : pickle file of predictions
+    - y_xxx.pkl : pickle file of ground truth values
+- inference
+    - produces one file: preds_tform_mlp_xxx.csv with two columns: the sequence id and predicted Kd value
 
 ----
 ## Config files
@@ -85,6 +95,7 @@ Some caveats however:
 
 
 ----
+
 ## Pre-trained weights files locations
 
 | Model  | Dataset  | Weights file |
@@ -95,4 +106,5 @@ Some caveats however:
 | Transformer    | clean-1     | lightning_logs/tform_mlp_model/cleaned-1-data/trained/checkpoints    |
 | Transformer    | clean-3b    | lightning_logs/tform_mlp_model/cleaned-3b-data/trained/checkpoints    |
 | Transformer    | clean-4     | lightning_logs/tform_mlp_model/cleaned-4-data/trained/checkpoints   |
+
 
