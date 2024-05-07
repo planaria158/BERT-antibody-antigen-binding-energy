@@ -37,7 +37,7 @@ test_params:
   devices: 1
   batch_size: 2048
   num_workers: 2
-  checkpoint_name: '../lightning_logs/mlp_model/cleaned-3b-data/version_0/checkpoints/epoch=3787-step=7575-val_loss=0.41-loss=0.37.ckpt' 
+  checkpoint_name: '../lightning_logs/mlp_model/cleaned-3b-data/trained/checkpoints/epoch=3787-step=7575-val_loss=0.41-loss=0.37.ckpt' 
   test_data_path: '../data/q_cleaned_3b_test_set.csv'
 
 inference_params:

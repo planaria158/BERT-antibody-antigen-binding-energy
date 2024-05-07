@@ -44,14 +44,11 @@ def main():
     #----------------------------------------------------------
     # Model
     #----------------------------------------------------------
-    if train_config['checkpoint_name'] != 'None':
-        print('Restarting from checkpoint: ', train_config['checkpoint_name'])
-        model = TFormMLP_Lightning.load_from_checkpoint(checkpoint_path=test_config['checkpoint_name'], 
-                                                        model_config=model_config,
-                                                        config=train_config)
-    else:
-        print('Starting from new model instance')
-        model = TFormMLP_Lightning(model_config, train_config) 
+    assert test_config['checkpoint_name'] != None, 'checkpoint_name is None'
+    print('Restarting from checkpoint: ', test_config['checkpoint_name'])
+    model = TFormMLP_Lightning.load_from_checkpoint(checkpoint_path=test_config['checkpoint_name'], 
+                                                    model_config=model_config,
+                                                    config=train_config)
 
     total_params = sum(param.numel() for param in model.parameters())
     print('Model has:', int(total_params), 'parameters')
@@ -71,6 +68,7 @@ def main():
                          log_every_n_steps=train_config['log_every_nsteps'])   
 
     trainer.test(model=model, dataloaders=test_loader)
+
     print('Done!!')
 
 if __name__ == '__main__':

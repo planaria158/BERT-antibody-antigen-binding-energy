@@ -168,7 +168,7 @@ class TFormMLP_Lightning(LightningModule):
         self.preds = []
 
     def predict_step(self, batch, batch_idx):
-        y_hat, _ = self.forward(batch[0].float())
+        y_hat, _ = self.forward(batch[0])
         self.preds.extend(y_hat.cpu().numpy().tolist())
         return
 
@@ -180,8 +180,7 @@ class TFormMLP_Lightning(LightningModule):
         print('saving', len(self.preds), 'preds to:', filename)
         pk.dump(self.preds, open(filename, 'wb'))
         return
-    
-    
+        
 
     def configure_optimizers(self):
         lr = self.config['learning_rate']

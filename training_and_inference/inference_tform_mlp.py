@@ -20,8 +20,13 @@ def train(args):
         except yaml.YAMLError as exc:
             print(exc)
 
-    config = config['model_params']
-    print(config)
+    model_config = config['model_params']
+    train_config = config['train_params']    
+    test_config = config['test_params']    
+
+    print(model_config)
+    print(train_config)
+    print(test_config)
     pl.seed_everything(config['seed'])
 
     #----------------------------------------------------------

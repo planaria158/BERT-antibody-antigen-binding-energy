@@ -44,8 +44,8 @@ test_params:
   devices: 1
   batch_size: 160
   num_workers: 2
-  checkpoint_name: None 
-  test_data_path: '../data/q_cleaned_3b_test_set.csv'
+  checkpoint_name: '../lightning_logs/tform_mlp_model/cleaned-3b-data/trained/checkpoints/epoch=183-step=4600-val_loss=0.11-loss=0.07.ckpt' 
+  test_data_path:  '../data/q_cleaned_3b_test_set.csv'
 
 inference_params:
   accelerator : 'gpu' # cpu, gpu, mps(macbook M2 chip)

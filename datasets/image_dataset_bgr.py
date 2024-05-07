@@ -14,18 +14,19 @@ class Image_Dataset_BGR(Dataset):
     """
     Emits 2D B&W images and binding energies
     """
-    def __init__(self, config, csv_file_path, transform=None, skiprows=0, inference=False, regularize=False):  
+    def __init__(self, config, img_shape, block_size, csv_file_path, transform=None, skiprows=0, inference=False, regularize=False):  
         super().__init__()
-        self.scFv_dataset = scFv_Dataset(config, csv_file_path, skiprows, inference, regularize)
+        self.scFv_dataset = scFv_Dataset(config, block_size, csv_file_path, skiprows, inference, regularize)
         self.config = config
-        self.img_shape = config['image_shape']
+        self.block_size = block_size
+        self.img_shape = img_shape
         self.transform = transform
          
         chars = self.scFv_dataset.chars
         groups= ['none', 'nonpolar', 'nonpolar', 'neg', 'neg', 'nonpolar', 'nonpolar', 'pos', 'nonpolar', 'pos', 'nonpolar', 'nonpolar', 'neg', 
                 'nonpolar', 'neg', 'pos', 'polar', 'polar', 'nonpolar', 'nonpolar', 'polar', 'none', 'none', 'none']
         
-        # Since the residue encodings are spread over 8-bits, manually assign these encodings to span 8-bits
+        # I manually created these group encodings.  There may be better ways to do this.
         group_encodings = { 'none'    : int('11001100', base=2), 
                             'polar'   : int('00110011', base=2),
                             'nonpolar': int('01100110', base=2), 

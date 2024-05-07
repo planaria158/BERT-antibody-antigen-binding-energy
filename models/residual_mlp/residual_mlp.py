@@ -41,12 +41,12 @@ class ResidualMLP(nn.Module):
     def __init__(self, config, input_dim, num_layers=4):
         super(ResidualMLP, self).__init__()
         print('Regression head is ResidualMLP')
+        self.in_dim = input_dim
         self.out_dim = input_dim  # output dim each layer. 
         self.num_layers = num_layers      
-        self.in_dim = input_dim
 
-        #  may look something like this: (assuming input_dim = 248, for example)
-        #  layers: [[248,248], [248,248], [248,248], [248,248], [248,248], [248,248], [248,248], [248,1]]
+        #  may look something like this: (assuming input_dim = 256, for example)
+        #  layers: [[256,256], [256,256], [256,256], [256,1]]
         self.net = nn.ModuleList()
         in_dim = self.in_dim
         for idx in range(self.num_layers-1):
@@ -111,29 +111,29 @@ class ResidualMLP_Lightning(LightningModule):
         self.log_dict({"val_loss": val_loss}, on_epoch=True, on_step=True, prog_bar=True, sync_dist=True)
         return val_loss
     
-    def on_predict_start(self):
-        self.preds = []
-        self.y = []
+    # def on_predict_start(self):
+    #     self.preds = []
+    #     self.y = []
 
-    def predict_step(self, batch, batch_idx):
-        y_hat = self.forward(batch[0].float())
-        self.y.extend(batch[1].cpu().numpy().tolist())
-        self.preds.extend(y_hat.cpu().numpy().tolist())
-        return
+    # def predict_step(self, batch, batch_idx):
+    #     y_hat = self.forward(batch[0].float())
+    #     self.y.extend(batch[1].cpu().numpy().tolist())
+    #     self.preds.extend(y_hat.cpu().numpy().tolist())
+    #     return
 
-    def on_predict_end(self):
-        # save the preds to file
-        path = Path(self.config['inference_results_folder'])
-        path.mkdir(parents=True, exist_ok=True)
-        filename = os.path.join(path, 'preds_residual_mlp_' + str(time.time()) + '.pkl')      
-        print('saving', len(self.preds), 'preds to:', filename)
-        pk.dump(self.preds, open(filename, 'wb'))
+    # def on_predict_end(self):
+    #     # save the preds to file
+    #     path = Path(self.config['inference_results_folder'])
+    #     path.mkdir(parents=True, exist_ok=True)
+    #     filename = os.path.join(path, 'preds_residual_mlp_' + str(time.time()) + '.pkl')      
+    #     print('saving', len(self.preds), 'preds to:', filename)
+    #     pk.dump(self.preds, open(filename, 'wb'))
 
-        filename = os.path.join(path, 'y_residual_mlp_' + str(time.time()) + '.pkl')      
-        print('saving', len(self.y), 'y values to:', filename)
-        pk.dump(self.y, open(filename, 'wb'))
+    #     filename = os.path.join(path, 'y_residual_mlp_' + str(time.time()) + '.pkl')      
+    #     print('saving', len(self.y), 'y values to:', filename)
+    #     pk.dump(self.y, open(filename, 'wb'))
 
-        return 
+    #     return 
 
     def configure_optimizers(self):
         lr = self.config['learning_rate']
