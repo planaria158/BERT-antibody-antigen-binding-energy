@@ -1,7 +1,7 @@
 
 
 
-### A-Alpha Bio homework submitted by Mark Thompson. May XX, 2024
+# A-Alpha Bio homework submitted by Mark Thompson. May 7, 2024
 
 
 Purpose:
@@ -9,10 +9,21 @@ This study outlines creating regression models to predict binding affinites from
 
 Repository for this project: https://github.com/planaria158/aAlphaBio-Homework  (I'll need to make sure it's public)
 
+
+<p align="left">
+<img src="./images/predictions.png" alt="drawing" width="600"/>
+</p>
+
 ----
-## Model architectures in this repository
+## Model architectures
+
+<p align="left">
+  <img src="./images/model_architectures.png" alt="drawing" width="600"/>
+</p>
+
+
 - 4-layer MLP
-- Vision Transformer: trained on 1-channel and 3-channel
+- Vision Transformer: trained on 1-channel and 3-channel, with a  
 - Transformer with 4-layer residual-MLP regression head
 
 
