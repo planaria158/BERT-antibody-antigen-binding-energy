@@ -24,7 +24,7 @@ train_params:
   batch_size: 384
   num_workers: 10
   grad_norm_clip : 1.0
-  num_epochs : 1000
+  num_epochs : 500
   log_dir :        '../lightning_logs/vit_model/cleaned-3b-data/3-channel'
   train_data_path: '../data/q_cleaned_3b_train_set.csv'
   val_data_path:   '../data/q_cleaned_3b_val_set.csv'
@@ -46,8 +46,8 @@ test_params:
   devices: 1
   batch_size: 384
   num_workers: 2
-  checkpoint_name: None 
-  test_data_path: '../data/q_cleaned_3b_test_set.csv'
+  checkpoint_name: '../lightning_logs/vit_model/cleaned-3b-data/3-channel/trained/checkpoints/epoch=445-step=4900-val_loss=0.13-loss=0.10.ckpt' 
+  test_data_path:  '../data/q_cleaned_3b_test_set.csv'
 
 inference_params:
   accelerator : 'gpu' # cpu, gpu, mps(macbook M2 chip)
