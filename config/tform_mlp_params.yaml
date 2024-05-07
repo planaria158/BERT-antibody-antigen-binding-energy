@@ -32,11 +32,11 @@ train_params:
   lr_gamma: 0.9995     # for exponential learning rate decay
   betas : [0.9, 0.95]
   checkpoint_every_n_train_steps : 100
-  save_top_k : 50
+  save_top_k : 10
   monitor: 'val_loss'  
   mode: 'min'
   log_every_nsteps: 10
-  test_results_folder: '../test_results/tform_mlp_model/cleaned-3b-data/'
+  test_results_folder:      '../test_results/tform_mlp_model/cleaned-3b-data/'
   inference_results_folder: '../inference_results/tform_mlp_model/cleaned-3b-data/'
 
 test_params:

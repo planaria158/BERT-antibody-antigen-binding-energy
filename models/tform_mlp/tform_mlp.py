@@ -54,7 +54,7 @@ class TFormMLP(nn.Module):
                                               model_config['dim_head'], config['tform_dropout'])
         
         # The residualMLP regression head
-        self.regression_head = ResidualMLP(config, emb_dim, num_layers=4)
+        self.regression_head = ResidualMLP(config, emb_dim, num_layers=4) # fixed here at 4 layers
            
     def forward(self, x): 
         b, n = x.shape
@@ -168,7 +168,7 @@ class TFormMLP_Lightning(LightningModule):
         self.preds = []
 
     def predict_step(self, batch, batch_idx):
-        y_hat = self.forward(batch[0].float())
+        y_hat, _ = self.forward(batch[0].float())
         self.preds.extend(y_hat.cpu().numpy().tolist())
         return
 
