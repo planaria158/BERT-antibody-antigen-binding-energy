@@ -29,8 +29,8 @@ Repository for this project: https://github.com/planaria158/aAlphaBio-Homework  
 | misc_analysis        | misc files generated in t-SNE and related..    |
 | models               | model classes    |
 | test_results         | results of all test runs    |
-| train-test-inference | scripts for train, test, and inference of the models    |
-| Analysis.ipynb       | notebook for misc. analysis    |
+| train_test_inference | scripts for train, test, and inference of the models    |
+| Analysis.ipynb       | notebook for misc. analysis and t-SNE plots   |
 | DataAnalysis.ipynb   | notebook used to create training sets from raw daya    |
 | Homework-aAlphaBio.pptx | PowerPoint slide deck for this study
 
@@ -40,6 +40,13 @@ Repository for this project: https://github.com/planaria158/aAlphaBio-Homework  
 - Edit the relevant config file
 - cd to the train-test-inference folder
 - run the desired script from the command line (no command line arguments needed)
+
+An inconveniente source of human error when editing the config files.....
+
+Files produced
+- training: xxxx
+- testing: xxxx
+- inference: xxxx
 
 ----
 ## Config files
