@@ -1,0 +1,36 @@
+config:
+  accelerator: gpu
+  batch_size: 160
+  betas:
+  - 0.9
+  - 0.95
+  checkpoint_every_n_train_steps: 100
+  checkpoint_name: None
+  devices: 2
+  emb_dropout: 0.15
+  grad_norm_clip: 1.0
+  inference_results_folder: ../inference_results/tform_mlp_model/cleaned-1-data/
+  learning_rate: 0.001
+  log_dir: ../lightning_logs/tform_mlp_model/cleaned-1-data/
+  log_every_nsteps: 10
+  lr_gamma: 0.9995
+  mlp_dropout: 0.3
+  mode: min
+  monitor: val_loss
+  num_epochs: 1000
+  num_workers: 10
+  save_top_k: 10
+  seq_flip_prob: 0.0
+  seq_mask_prob: 0.05
+  sequence_regularize: true
+  test_results_folder: ../test_results/tform_mlp_model/cleaned-1-data/
+  tform_dropout: 0.15
+  train_data_path: ../data/q_cleaned_1_train_set.csv
+  val_data_path: ../data/q_cleaned_1_val_set.csv
+model_config:
+  block_size: 247
+  dim_head: 64
+  emb_dim: 256
+  num_heads: 8
+  num_layers: 6
+  vocab_size: 24
