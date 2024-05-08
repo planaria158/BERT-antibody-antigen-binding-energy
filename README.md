@@ -5,7 +5,7 @@
 
 
 ## Overview:
-- This study outlines creating and training regression models to predict binding affinites from sequence data for single-chain variable regions of human immunoglobulins.  - - 
+- This study outlines creating and training regression models to predict binding affinites from sequence data for single-chain variable regions of human immunoglobulins.
 - Please refer to the PowerPoint slide deck for a complete overall description of all work (`Homework-aAlphaBio.pptx`) 
 
 ----
@@ -84,7 +84,8 @@ The config files are divided into 4 main sections.  The contents should be large
 - test_params
 - inference_params
 
-Some caveats however: 
+#### Some caveats however
+
 - All paths are relative to the train-test-inference folder
 - You may need to change `accelerator` and `devices` to suite your environment
 - `checkpoint_name`  Typically this is given as `None`
