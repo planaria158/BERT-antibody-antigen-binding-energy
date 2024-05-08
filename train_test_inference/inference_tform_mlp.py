@@ -4,7 +4,7 @@ import argparse
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 from datasets.scFv_dataset import scFv_Dataset as dataset
-from models.tform_mlp.tform_mlp import TFormMLP_Lightning 
+from models.tform_mlp import TFormMLP_Lightning 
 
 #----------------------------------------------------------------------
 # This file is for running inference with the Transformer model

@@ -4,7 +4,7 @@ import argparse
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 from datasets.scFv_dataset import scFv_Dataset as dataset
-from models.simple_mlp.mlp_model import MLP_Lightning
+from models.mlp_model import MLP_Lightning
 
 #----------------------------------------------------------------------
 # This file is for running on the test set for MLP model

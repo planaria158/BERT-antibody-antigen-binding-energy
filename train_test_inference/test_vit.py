@@ -3,7 +3,7 @@ import yaml
 import argparse
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
-from models.vit.vit import VIT_Lightning
+from models.vit import VIT_Lightning
 
 #----------------------------------------------------------------------
 # This file is for running the test set using Visual Transformer model

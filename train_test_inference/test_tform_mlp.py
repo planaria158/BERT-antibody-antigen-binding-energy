@@ -3,7 +3,7 @@ import yaml
 import argparse
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
-from models.tform_mlp.tform_mlp import TFormMLP_Lightning
+from models.tform_mlp import TFormMLP_Lightning
 from datasets.scFv_dataset import scFv_Dataset as dataset
 
 #----------------------------------------------------------------------

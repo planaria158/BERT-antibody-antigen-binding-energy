@@ -26,7 +26,7 @@ class Image_Dataset_BGR(Dataset):
         groups= ['none', 'nonpolar', 'nonpolar', 'neg', 'neg', 'nonpolar', 'nonpolar', 'pos', 'nonpolar', 'pos', 'nonpolar', 'nonpolar', 'neg', 
                 'nonpolar', 'neg', 'pos', 'polar', 'polar', 'nonpolar', 'nonpolar', 'polar', 'none', 'none', 'none']
         
-        # I manually created these group encodings.  There may be better ways to do this.
+        # I manually created these group encodings.  
         group_encodings = { 'none'    : int('11001100', base=2), 
                             'polar'   : int('00110011', base=2),
                             'nonpolar': int('01100110', base=2), 

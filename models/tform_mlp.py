@@ -11,13 +11,13 @@ from pytorch_lightning.core import LightningModule
 import torch.nn.functional as F
 from einops.layers.torch import Rearrange
 from einops import repeat, rearrange
-from models.residual_mlp.residual_mlp import ResidualMLP
-from models.transformer_parts.transformer_parts import TransformerEncoder
+from models.residual_mlp import ResidualMLP
+from models.model_parts import TransformerEncoder
 from train_test_inference.test_metrics import test_metrics
 
 class TFormMLP(nn.Module):
     """
-        Dataset class for a transformer model that operates on sequences of residues
+        Model class for a transformer model that operates on sequences of residues
         It operates on sequences of residues of block_size length
         Regression is done via the usual class token added to the start of the sequence
 

@@ -4,32 +4,72 @@ import json
 from pathlib import Path
 import os
 import time
-import math
-import numpy as np
 import torch
 from torch import nn
 from pytorch_lightning.core import LightningModule
-from models.transformer_parts.transformer_parts import MLP
+import torch.nn.functional as F
+from einops.layers.torch import Rearrange
+from einops import repeat, rearrange
+from models.model_parts import TransformerEncoder
+from models.residual_mlp import ResidualMLP
 from train_test_inference.test_metrics import test_metrics
 
-"""
-    Pytorch Lightning Module that hosts a simple MLP model
-    and runs the training, validation, and testing loops
 
-    Args:
-        config: dictionary containing the configuration parameters
-            block_size: int, the size of the input block
-            mlp_dropout: float, the dropout rate for the MLP
-            learning_rate: float, the learning rate for the optimizer
-            betas: tuple, the betas for the optimizer
-            lr_gamma: float, the gamma for the scheduler
-            inference_results_folder: string, the folder where the inference results will be saved
-"""
-class MLP_Lightning(LightningModule):
-    def __init__(self, in_dim, config):
-        super(MLP_Lightning, self).__init__()
+class VIT(nn.Module):
+    """
+        Vision Transformer Model
+        Intended to operate on 2D images constructed from scFv sequences
+
+        Args:
+            config: dict with configuration parameters
+    """
+    def __init__(self, model_config, config):
+        super(VIT, self).__init__()
+
+        patch_dim = model_config['patch_dim']
+        emb_dim   = model_config['emb_dim']
+        img_shape = model_config['image_shape']
+
+        self.token_dim = patch_dim * patch_dim * model_config['image_channels']   # length of linearized patchs
+        self.num_patches = ((img_shape[0]//patch_dim) * (img_shape[0]//patch_dim))
+        print('num_patches:', self.num_patches, ', token_dim:', self.token_dim)
+
+        self.patch_embedding = nn.Sequential(
+                                    Rearrange('b c (h p1) (w p2) -> b (h w) (p1 p2 c)', p1 = patch_dim, p2 = patch_dim),
+                                    nn.LayerNorm(self.token_dim),
+                                    nn.Linear(self.token_dim, emb_dim))
+        self.class_embedding = nn.Parameter(torch.randn(1, 1, emb_dim))
+        self.pos_embedding = nn.Parameter(torch.randn(1, self.num_patches + 1, emb_dim))
+        self.emb_dropout = nn.Dropout(p=config['emb_dropout'])
+        self.transformer_encoder = TransformerEncoder(model_config['num_layers'], emb_dim, model_config['num_heads'], 
+                                                      model_config['dim_head'], config['tform_dropout'])
+        # The residualMLP regression head
+        self.regression_head = ResidualMLP(config, emb_dim, num_layers=4)
+
+           
+    def forward(self, imgs): 
+        patch_emb = self.patch_embedding(imgs) # i.e. [b, 64, dim]
+        b, n, _ = patch_emb.shape
+        class_tokens = repeat(self.class_embedding, '() n d -> b n d', b = b)
+        embeddings = torch.cat((class_tokens, patch_emb), dim=1) # i.e. [b, 65, dim]
+        embeddings += self.pos_embedding[:, :(n + 1)]
+        x = self.emb_dropout(embeddings)
+        x = self.transformer_encoder(x)
+        logits = self.regression_head(x[:, 0, :])  # [b, 1] just apply to the CLS token
+        return logits 
+
+
+class VIT_Lightning(LightningModule):
+    """
+        Pytorch Lightning Module for training Vision Transformer
+
+        Args:
+            config: dict with configuration parameters
+    """
+    def __init__(self, model_config, config):
+        super(VIT_Lightning, self).__init__()
         self.config = config
-        self.model = MLP(in_dim, self.config['mlp_dropout'])
+        self.model = VIT(model_config, config)
         self.criteriion = nn.MSELoss()
         self.save_hyperparameters()
 
@@ -41,6 +81,7 @@ class MLP_Lightning(LightningModule):
         x = x.float()
         y_hat = self.model(x)
         loss = self.criteriion(y_hat, y)
+        # torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.config['grad_norm_clip'])
         return loss, y_hat, y
 
     def training_step(self, batch, batch_idx):
@@ -52,6 +93,7 @@ class MLP_Lightning(LightningModule):
         val_loss, _, _ = self.common_forward(batch, batch_idx)
         self.log_dict({"val_loss": val_loss}, on_epoch=True, on_step=True, prog_bar=True, sync_dist=True)
         return val_loss
+    
 
     #--------------------------------------------------------
     # Test methods
@@ -78,16 +120,16 @@ class MLP_Lightning(LightningModule):
         path.mkdir(parents=True, exist_ok=True)
         
         timestamp = str(time.time())
-        filename = os.path.join(path, 'metrics_mlp_' + timestamp + '.txt')      
+        filename = os.path.join(path, 'metrics_vit_' + timestamp + '.txt')      
         print('saving metrics to:', filename)
         with open(filename, 'w') as out_file: 
             out_file.write(json.dumps(self.metrics))
 
-        filename = os.path.join(path, 'preds_mlp_' + timestamp + '.pkl')      
+        filename = os.path.join(path, 'preds_vit_' + timestamp + '.pkl')      
         print('saving', len(self.preds), 'preds to:', filename)
         pk.dump(self.preds, open(filename, 'wb'))
 
-        filename = os.path.join(path, 'y_mlp_' + timestamp + '.pkl')      
+        filename = os.path.join(path, 'y_vit_' + timestamp + '.pkl')      
         print('saving', len(self.y), 'y values to:', filename)
         pk.dump(self.y, open(filename, 'wb'))
         return 
@@ -108,7 +150,7 @@ class MLP_Lightning(LightningModule):
         path = Path(self.config['inference_results_folder'])
         path.mkdir(parents=True, exist_ok=True)
         timestamp = str(time.time())
-        filename = os.path.join(path, 'preds_mlp_' + timestamp + '.pkl')      
+        filename = os.path.join(path, 'preds_vit_' + timestamp + '.pkl')      
         print('saving', len(self.preds), 'preds to:', filename)
         pk.dump(self.preds, open(filename, 'wb'))
         return

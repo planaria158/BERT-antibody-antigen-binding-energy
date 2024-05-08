@@ -4,7 +4,7 @@ import argparse
 import pytorch_lightning as pl
 import torch
 from torch.utils.data import DataLoader
-from models.vit.vit import VIT_Lightning
+from models.vit import VIT_Lightning
 
 #----------------------------------------------------------------------
 # This file is for training the Vision Transformer model
