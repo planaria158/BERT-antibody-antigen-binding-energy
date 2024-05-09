@@ -17,9 +17,9 @@ train_params:
   kd_mod_prob:    0.0  # regularization: probability of changing the kd values
                        # kd values will be taken as a random value over [kd_low, kd_high]
 
-  tform_dropout: 0.15
-  emb_dropout: 0.15
-  mlp_dropout: 0.30
+  tform_dropout: 0.10 #0.15
+  emb_dropout: 0.10 #0.15
+  mlp_dropout: 0.20 #0.30
 
   accelerator : 'gpu'   # cpu, gpu, mps(macbook M2 chip)
   devices: 2  #[1]
@@ -53,10 +53,10 @@ test_params:
 
 inference_params:
   accelerator : 'gpu' # cpu, gpu, mps(macbook M2 chip)
-  devices: 1
+  devices: [1]  # i.e. gpu 1
   batch_size: 160
   num_workers: 2
-  checkpoint_name:     None
+  checkpoint_name:     '../lightning_logs/tform_mlp_model_v2/cleaned-4b-data/version_1/checkpoints/epoch=312-step=9700-val_loss=0.10-loss=0.05.ckpt'
   inference_data_path: '../data/alphaseq_data_hold_out.csv'
 
 seed : 3407

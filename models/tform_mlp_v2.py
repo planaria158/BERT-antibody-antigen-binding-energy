@@ -34,7 +34,7 @@ class TFormMLP_v2(nn.Module):
         # The residualMLP regression head
         self.regression_head = ResidualMLP(config, emb_dim, num_layers=4) # fixed here at 4 layers
            
-    def forward(self, x, aa_grps, aa_var): 
+    def forward(self, x, aa_grps, aa_var):  
         b, n = x.shape
         assert n <= self.block_size, f"Cannot forward sequence of length {n}, block size is only {self.block_size}"
         tok_emb = self.token_embedding(x)       # token embeddings of shape (b, n, n_embd)
