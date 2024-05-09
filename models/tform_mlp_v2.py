@@ -51,7 +51,6 @@ class TFormMLP_v2(nn.Module):
         return logits, tform_out
 
 
-
 class TFormMLP_Lightning_v2(LightningModule):
     """
         Pytorch Lightning Module that hosts the TFormMLP model
@@ -86,8 +85,8 @@ class TFormMLP_Lightning_v2(LightningModule):
         self.criterion = nn.MSELoss()
         self.save_hyperparameters()
 
-    def forward(self, x, x2):
-        return self.model(x, x2)
+    def forward(self, x, x2, x3):
+        return self.model(x, x2, x3)
 
     def common_forward(self, batch, batch_idx):
         x1, x2, x3, y, names = batch

@@ -61,15 +61,10 @@ class scFv_Dataset(Dataset):
         # apologies: next couple lines are overly dataset-specific
         if self.inference == False: # training or test mode
             Kd = self.df.loc[idx, 'Kd']
-            Kd_min = self.df.loc[idx, 'Kd_min']
-            Kd_max = self.df.loc[idx, 'Kd_max']
             assert not math.isnan(Kd), 'Kd is nan'
-            assert not math.isnan(Kd_min), 'Kd_min is nan'
-            assert not math.isnan(Kd_max), 'Kd_max is nan'
-            assert Kd_min <= Kd <= Kd_max, 'Kd_min, Kd, Kd_max are inconsistent'
             name = 'none'
         else:
-            Kd = Kd_min = Kd_max = 0 # inference mode - Kd is not available
+            Kd = 0 # inference mode - Kd is not available
             name = self.df.loc[idx, 'description_a']
 
         assert Kd >= 0.0, 'affinity cannot be negative'
@@ -95,11 +90,6 @@ class scFv_Dataset(Dataset):
                 num_2_mask = max(0, int(round((dix.shape[0])*self.config['seq_mask_prob'])))
                 masked_idx = torch.randperm((dix.shape[0]), dtype=torch.long)[:num_2_mask]
                 dix[masked_idx] = self.stoi['MASK']
-
-            # Choose a new value for Kd that is randomly chosen from [Kd_lower, Kd_upper]
-            if random.random() < self.config['kd_mod_prob']:
-                Kd = random.uniform(Kd_min, Kd_max)
-                
 
 
         # prepend the CLS token to the sequence
