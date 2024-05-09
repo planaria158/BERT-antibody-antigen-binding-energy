@@ -48,37 +48,50 @@ class scFv_Dataset_v2(Dataset):
         # The relative variability frequence for each amino acid position in the scFv sequences over the entire clean_3 dataset
         # This fixed-array is 246 residues
         raw_pos_variability = torch.tensor([ 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
-                                                0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
-                                                0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
-                                                0.0000, 0.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 0.7778,
-                                                0.9444, 0.9444, 1.0000, 1.0000, 1.0000, 0.9444, 1.0000, 1.0000, 0.8889,
-                                                0.5556, 0.5000, 0.2222, 0.3333, 0.2778, 0.6111, 0.4444, 0.5556, 1.0000,
-                                                0.8333, 0.8333, 0.8333, 0.9444, 0.7778, 0.8333, 0.6111, 1.0000, 0.8889,
-                                                0.3333, 0.9444, 0.8889, 0.1111, 0.3889, 0.9444, 0.2778, 0.9444, 0.8333,
-                                                0.5000, 1.0000, 1.0000, 1.0000, 0.9444, 0.6111, 0.6111, 0.7778, 0.2778,
-                                                0.8889, 0.3889, 0.9444, 1.0000, 0.3889, 0.9444, 1.0000, 0.9444, 0.2222,
-                                                0.7778, 0.5556, 0.8889, 0.2222, 0.7778, 0.6111, 0.6667, 0.8333, 0.8333,
-                                                1.0000, 1.0000, 0.8889, 0.8333, 0.8333, 0.9444, 0.7222, 0.9444, 0.9444,
-                                                0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
-                                                0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
-                                                0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
-                                                0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
-                                                0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
-                                                0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
-                                                0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
-                                                0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
-                                                0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
-                                                0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
-                                                0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
-                                                0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
-                                                0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
-                                                0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
-                                                0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 
-                                                0.0000, 0.0000, 0.0000]) 
+                                             0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+                                             0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+                                             0.0000, 0.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 0.7778,
+                                             0.9444, 0.9444, 1.0000, 1.0000, 1.0000, 0.9444, 1.0000, 1.0000, 0.8889,
+                                             0.5556, 0.5000, 0.2222, 0.3333, 0.2778, 0.6111, 0.4444, 0.5556, 1.0000,
+                                             0.8333, 0.8333, 0.8333, 0.9444, 0.7778, 0.8333, 0.6111, 1.0000, 0.8889,
+                                             0.3333, 0.9444, 0.8889, 0.1111, 0.3889, 0.9444, 0.2778, 0.9444, 0.8333,
+                                             0.5000, 1.0000, 1.0000, 1.0000, 0.9444, 0.6111, 0.6111, 0.7778, 0.2778,
+                                             0.8889, 0.3889, 0.9444, 1.0000, 0.3889, 0.9444, 1.0000, 0.9444, 0.2222,
+                                             0.7778, 0.5556, 0.8889, 0.2222, 0.7778, 0.6111, 0.6667, 0.8333, 0.8333,
+                                             1.0000, 1.0000, 0.8889, 0.8333, 0.8333, 0.9444, 0.7222, 0.9444, 0.9444,
+                                             0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+                                             0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+                                             0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+                                             0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+                                             0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+                                             0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+                                             0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+                                             0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+                                             0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+                                             0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+                                             0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+                                             0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+                                             0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+                                             0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+                                             0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 
+                                             0.0000, 0.0000, 0.0000]) 
         
-        self.pos_variability_encoded = torch.round(raw_pos_variability * 255).to(torch.long)
-        print('min variability:', torch.min(self.pos_variability_encoded), 'max variability', torch.max(self.pos_variability_encoded))
-        print('a sample of some variability values:', self.pos_variability_encoded[60:70])
+        # Map the raw_pos_variability into 10 buckets based on value
+        var_buckets = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1.0]
+        def get_bucket(n):
+            assert(n >= 0 and n <= 1), "make sure n is in the range [0,1.0]"
+            for i, k in enumerate(var_buckets):
+                if n <= k:
+                    return i
+            return 9        # assign each variability value to a bucket
+        
+        self.enc_pos_variability = [get_bucket(v) for v in raw_pos_variability]
+
+        # Convert the float values to ints [0,255]. Makes it easier to embed in the model
+        # self.pos_variability_encoded = torch.round(raw_pos_variability * 255).to(torch.long)
+        # print('min variability:', torch.min(self.pos_variability_encoded), 'max variability', torch.max(self.pos_variability_encoded))
+        print('a sample of some raw variability values:', raw_pos_variability[60:65])
+        print('and their corresponding encoded values :', self.enc_pos_variability[60:65])
 
 
         # encoding and decoding residues
@@ -125,15 +138,16 @@ class scFv_Dataset_v2(Dataset):
         # apologies: next couple lines are overly dataset-specific
         if self.inference == False: # training or test mode
             Kd = self.df.loc[idx, 'Kd']
-            Kd_min = self.df.loc[idx, 'Kd_min']
-            Kd_max = self.df.loc[idx, 'Kd_max']
+            # Kd_min = self.df.loc[idx, 'Kd_min']
+            # Kd_max = self.df.loc[idx, 'Kd_max']
             assert not math.isnan(Kd), 'Kd is nan'
-            assert not math.isnan(Kd_min), 'Kd_min is nan'
-            assert not math.isnan(Kd_max), 'Kd_max is nan'
-            assert Kd_min <= Kd <= Kd_max, 'Kd_min, Kd, Kd_max are inconsistent'
+            # assert not math.isnan(Kd_min), 'Kd_min is nan'
+            # assert not math.isnan(Kd_max), 'Kd_max is nan'
+            # assert Kd_min <= Kd <= Kd_max, 'Kd_min, Kd, Kd_max are inconsistent'
             name = 'none'
         else:
-            Kd = Kd_min = Kd_max = 0 # inference mode - Kd is not available
+            # Kd = Kd_min = Kd_max = 0 # inference mode - Kd is not available
+            Kd = 0 # inference mode - Kd is not available
             name = self.df.loc[idx, 'description_a']
 
         assert Kd >= 0.0, 'affinity cannot be negative'
@@ -148,7 +162,7 @@ class scFv_Dataset_v2(Dataset):
         # encode residues, residues' groups, and position variability
         dix = torch.tensor([self.stoi[s] for s in chunk], dtype=torch.long)
         gix = torch.tensor([self.encode_aa_to_group(s) for s in chunk], dtype=torch.long)
-        vix = torch.tensor(self.pos_variability_encoded[:len(dix)], dtype=torch.long)
+        vix = torch.tensor(self.enc_pos_variability[:len(dix)], dtype=torch.long)
 
         # some sequence-level regularization & augmentation can be done here
         if self.regularize:
@@ -167,8 +181,8 @@ class scFv_Dataset_v2(Dataset):
                 vix[masked_idx] = 0  # ?? not sure about this...
 
             # Choose a new value for Kd that is randomly chosen from [Kd_lower, Kd_upper]
-            if random.random() < self.config['kd_mod_prob']:
-                Kd = random.uniform(Kd_min, Kd_max)
+            # if random.random() < self.config['kd_mod_prob']:
+            #     Kd = random.uniform(Kd_min, Kd_max)
                 
 
         # prepend the CLS token to the sequence

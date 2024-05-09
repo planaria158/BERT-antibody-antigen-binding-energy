@@ -6,14 +6,15 @@ model_params:
   dim_head: 64
   num_layers: 6
   emb_dim: 256  
-  num_aa_groups: 5   # none, polar, nonpolar, negative, positive
+  aa_groups_size: 5     # none, polar, nonpolar, negative, positive
+  pos_variab_size : 10  # sequence position variability encoded into 10 groups
 
 train_params:
   sequence_regularize: True
   seq_flip_prob:  0.0  # regularization: probability of flipping the sequence back-to-front
   seq_mask_prob:  0.05 # regularization: probability of masking an amino acid 
                        # (this masks ~10-15 residues in seq of 242 if prob = 0.05)
-  kd_mod_prob:    0.5  # regularization: probability of changing the kd values
+  kd_mod_prob:    0.0  # regularization: probability of changing the kd values
                        # kd values will be taken as a random value over [kd_low, kd_high]
 
   tform_dropout: 0.15
@@ -21,14 +22,14 @@ train_params:
   mlp_dropout: 0.30
 
   accelerator : 'gpu'   # cpu, gpu, mps(macbook M2 chip)
-  devices: 2
+  devices: [0]
   batch_size: 160
   num_workers: 10
   grad_norm_clip : 1.0
   num_epochs : 1000
-  log_dir :        '../lightning_logs/tform_mlp_model_v2/cleaned-4b-data/'
-  train_data_path: '../data/q_cleaned_4b_train_set.csv'
-  val_data_path:   '../data/q_cleaned_4b_val_set.csv'
+  log_dir :        '../lightning_logs/tform_mlp_model_v2/cleaned-1-data/'
+  train_data_path: '../data/q_cleaned_1_train_set.csv'
+  val_data_path:   '../data/q_cleaned_1_val_set.csv'
 
   checkpoint_name: None
   learning_rate : 0.001
@@ -39,8 +40,8 @@ train_params:
   monitor: 'val_loss'  
   mode: 'min'
   log_every_nsteps: 10
-  test_results_folder:      '../test_results/tform_mlp_model_v2/cleaned-4b-data/'
-  inference_results_folder: '../inference_results/tform_mlp_model_v2/cleaned-4b-data/'
+  test_results_folder:      '../test_results/tform_mlp_model_v2/cleaned-1-data/'
+  inference_results_folder: '../inference_results/tform_mlp_model_v2/cleaned-1-data/'
 
 test_params:
   accelerator : 'gpu' # cpu, gpu, mps(macbook M2 chip)
@@ -48,7 +49,7 @@ test_params:
   batch_size: 160
   num_workers: 2
   checkpoint_name: None
-  test_data_path:  '../data/q_cleaned_4b_test_set.csv'
+  test_data_path:  '../data/q_cleaned_1_test_set.csv'
 
 inference_params:
   accelerator : 'gpu' # cpu, gpu, mps(macbook M2 chip)

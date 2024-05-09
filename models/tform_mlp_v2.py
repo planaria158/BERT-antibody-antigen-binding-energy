@@ -22,8 +22,8 @@ class TFormMLP_v2(nn.Module):
         self.block_size = model_config['block_size']
 
         self.token_embedding = nn.Embedding(model_config['vocab_size'], emb_dim) # token embedding
-        self.group_embedding = nn.Embedding(model_config['num_aa_groups'], emb_dim) # aa group embedding
-        self.varibility_embedding = nn.Embedding(self.block_size, emb_dim) # variability of each position in sequence
+        self.group_embedding = nn.Embedding(model_config['aa_groups_size'], emb_dim) # aa group embedding
+        self.var_embedding   = nn.Embedding(model_config['pos_variab_size'], emb_dim) # variability of each position in sequence
 
         self.pos_embedding = nn.Parameter(torch.randn(1, self.block_size + 1, emb_dim))
         self.class_embedding = nn.Parameter(torch.randn(1, 1, emb_dim))
@@ -39,7 +39,7 @@ class TFormMLP_v2(nn.Module):
         assert n <= self.block_size, f"Cannot forward sequence of length {n}, block size is only {self.block_size}"
         tok_emb = self.token_embedding(x)       # token embeddings of shape (b, n, n_embd)
         grp_emb = self.group_embedding(aa_grps) # token embeddings of shape (b, n, n_embd)
-        var_emb = self.varibility_embedding(aa_var) # token embeddings of shape (b, n, n_embd)
+        var_emb = self.var_embedding(aa_var) # token embeddings of shape (b, n, n_embd)
         tok_emb += (grp_emb + var_emb)
 
         class_tokens = repeat(self.class_embedding, '() n d -> b n d', b = b)
