@@ -15,9 +15,9 @@ from models.residual_mlp import ResidualMLP
 from models.model_parts import TransformerEncoder
 from train_test_inference.test_metrics import test_metrics
 
-class TFormMLP_v2(nn.Module):
+class TForm_v2(nn.Module):
     def __init__(self, model_config, config):
-        super(TFormMLP_v2, self).__init__()
+        super(TForm_v2, self).__init__()
         emb_dim   = model_config['emb_dim']
         self.block_size = model_config['block_size']
 
@@ -50,7 +50,7 @@ class TFormMLP_v2(nn.Module):
         return logits, tform_out
 
 
-class TFormMLP_Lightning_v2(LightningModule):
+class TForm_Lightning_v2(LightningModule):
     """
         Pytorch Lightning Module that hosts the TFormMLP model
 
@@ -78,10 +78,11 @@ class TFormMLP_Lightning_v2(LightningModule):
                 'inference_results_folder': folder to save inference results
     """
     def __init__(self, model_config, config):
-        super(TFormMLP_Lightning_v2, self).__init__()
+        super(TForm_Lightning_v2, self).__init__()
         self.config = config
-        self.model = TFormMLP_v2(model_config, config)
-        self.criterion = nn.MSELoss()
+        self.model = TForm_v2(model_config, config)
+        assert config['loss_type'] in ['mse', 'mae'], 'loss_type must be either "mse" or "mae"'
+        self.criterion = nn.MSELoss() if config['loss_type'] == 'mse' else nn.L1Loss()
         self.save_hyperparameters()
 
     def forward(self, x, x2, x3):

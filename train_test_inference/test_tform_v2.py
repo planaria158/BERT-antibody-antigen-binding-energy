@@ -1,10 +1,9 @@
 import os
 import yaml
-import argparse
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
-from models.tform_mlp import TFormMLP_Lightning
-from datasets.scFv_dataset import scFv_Dataset as dataset
+from models.tform_v2 import TForm_Lightning_v2
+from datasets.scFv_dataset_v2 import scFv_Dataset_v2 as dataset
 
 #----------------------------------------------------------------------
 # This file is for running the test set using Visual Transformer model
@@ -46,7 +45,7 @@ def main():
     #----------------------------------------------------------
     assert test_config['checkpoint_name'] != None, 'checkpoint_name is None'
     print('Restarting from checkpoint: ', test_config['checkpoint_name'])
-    model = TFormMLP_Lightning.load_from_checkpoint(checkpoint_path=test_config['checkpoint_name'], 
+    model = TForm_Lightning_v2.load_from_checkpoint(checkpoint_path=test_config['checkpoint_name'], 
                                                     model_config=model_config,
                                                     config=train_config)
 

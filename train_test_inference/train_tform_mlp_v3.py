@@ -3,15 +3,15 @@ import yaml
 import argparse
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
-from models.tform_mlp import TFormMLP_Lightning
-from datasets.scFv_dataset import scFv_Dataset as dataset
+from models.tform_v2 import TForm_Lightning_v2
+from datasets.scFv_dataset_v3 import scFv_Dataset_v3 as dataset
 
 #----------------------------------------------------------------------
 # This file is for training the Transformer-residualMLP model
 #----------------------------------------------------------------------
 def main():
     # Read the config
-    config_path = '../config/tform_mlp_params.yaml'  
+    config_path = '../config/tform_mlp_params_v3.yaml'  
     with open(config_path, 'r') as file:
         try:
             config = yaml.safe_load(file)
@@ -30,12 +30,14 @@ def main():
     #----------------------------------------------------------
     train_dataset = dataset(train_config, 
                             model_config['block_size'],
+                            model_config['start_seq_idx'],
                             train_config['train_data_path'], 
                             regularize=train_config['sequence_regularize'])
 
     val_dataset = dataset(train_config, 
                           model_config['block_size'],
-                          train_config['val_data_path'] , 
+                          model_config['start_seq_idx'],
+                          train_config['val_data_path'], 
                           regularize=False)
 
     print('length of training set:', train_dataset.__len__())
@@ -53,12 +55,12 @@ def main():
     #----------------------------------------------------------
     if train_config['checkpoint_name'] != 'None':
         print('Restarting from checkpoint: ', train_config['checkpoint_name'])
-        model = TFormMLP_Lightning.load_from_checkpoint(checkpoint_path=train_config['checkpoint_name'], 
+        model = TForm_Lightning_v2.load_from_checkpoint(checkpoint_path=train_config['checkpoint_name'], 
                                                         model_config=model_config,
                                                         config=train_config)
     else:
         print('Starting from new model instance')
-        model = TFormMLP_Lightning(model_config, train_config) 
+        model = TForm_Lightning_v2(model_config, train_config) 
 
     total_params = sum(param.numel() for param in model.parameters())
     print('Model has:', int(total_params), 'parameters')

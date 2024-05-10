@@ -102,7 +102,8 @@ class TFormMLP_Lightning(LightningModule):
         super(TFormMLP_Lightning, self).__init__()
         self.config = config
         self.model = TFormMLP(model_config, config)
-        self.criteriion = nn.MSELoss()
+        assert config['loss_type'] in ['mse', 'mae'], 'loss_type must be either "mse" or "mae"'
+        self.criterion = nn.MSELoss() if config['loss_type'] == 'mse' else nn.L1Loss()
         self.save_hyperparameters()
 
     def forward(self, x):

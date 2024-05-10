@@ -3,8 +3,8 @@ import yaml
 import argparse
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
-from models.tform_mlp_v2 import TFormMLP_Lightning_v2
-from datasets.scFv_dataset_v2 import scFv_Dataset_v2 as dataset
+from models.tform import TFormMLP_Lightning
+from datasets.scFv_dataset import scFv_Dataset as dataset
 
 #----------------------------------------------------------------------
 # This file is for training the Transformer-residualMLP model
@@ -53,12 +53,12 @@ def main():
     #----------------------------------------------------------
     if train_config['checkpoint_name'] != 'None':
         print('Restarting from checkpoint: ', train_config['checkpoint_name'])
-        model = TFormMLP_Lightning_v2.load_from_checkpoint(checkpoint_path=train_config['checkpoint_name'], 
+        model = TFormMLP_Lightning.load_from_checkpoint(checkpoint_path=train_config['checkpoint_name'], 
                                                         model_config=model_config,
                                                         config=train_config)
     else:
         print('Starting from new model instance')
-        model = TFormMLP_Lightning_v2(model_config, train_config) 
+        model = TFormMLP_Lightning(model_config, train_config) 
 
     total_params = sum(param.numel() for param in model.parameters())
     print('Model has:', int(total_params), 'parameters')
