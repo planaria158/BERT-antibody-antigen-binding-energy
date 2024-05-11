@@ -43,10 +43,13 @@ def main():
     
     train_loader = DataLoader(train_dataset, shuffle=True, pin_memory=True, 
                               batch_size=train_config['batch_size'], 
-                              num_workers=train_config['num_workers'])
+                              num_workers=train_config['num_workers'],
+                              persistent_workers=True)
     
     val_loader = DataLoader(val_dataset, shuffle=False, pin_memory=True, 
-                            batch_size=train_config['batch_size'], num_workers=5)
+                            batch_size=train_config['batch_size'], 
+                            num_workers=train_config['num_workers'],
+                            persistent_workers=True)
 
     #----------------------------------------------------------
     # Model
@@ -79,7 +82,7 @@ def main():
     logger = TensorBoardLogger(save_dir=os.getcwd(), name=train_config['log_dir'], default_hp_metric=False)
 
     print('Using', train_config['accelerator'])
-    trainer = pl.Trainer(strategy='ddp', 
+    trainer = pl.Trainer(#strategy='ddp', 
                          accelerator=train_config['accelerator'], 
                          devices=train_config['devices'],
                          max_epochs=train_config['num_epochs'],   

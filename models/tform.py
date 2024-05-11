@@ -45,29 +45,63 @@ class TFormMLP(nn.Module):
     def __init__(self, model_config, config):
         super(TFormMLP, self).__init__()
         emb_dim   = model_config['emb_dim']
+        self.vocab_size = model_config['vocab_size']
         self.block_size = model_config['block_size']
+        self.config = config
 
         self.token_embedding = nn.Embedding(model_config['vocab_size'], emb_dim) # token embedding
-        self.pos_embedding = nn.Parameter(torch.randn(1, self.block_size + 1, emb_dim))
+
+        # for regression, the +1 accounts for the CLS token at the start of the tensor
+        if config['mask_prob'] == 0:
+            # The positional embedding is of size (1, block_size+1, emb_dim)
+            self.pos_embedding = nn.Parameter(torch.randn(1, self.block_size + 1, emb_dim))
+        else:
+            # The positional embedding is of size (block_size, emb_dim)
+            self.pos_embedding = nn.Parameter(torch.randn(1, self.block_size, emb_dim))
+
         self.class_embedding = nn.Parameter(torch.randn(1, 1, emb_dim))
         self.emb_dropout = nn.Dropout(p=config['emb_dropout'])
         self.transformer = TransformerEncoder(model_config['num_layers'], emb_dim, model_config['num_heads'], 
                                               model_config['dim_head'], config['tform_dropout'])
+        self.lm_head = nn.Linear(emb_dim, self.vocab_size, bias=False)
         
         # The residualMLP regression head
         self.regression_head = ResidualMLP(config, emb_dim, num_layers=4) # fixed here at 4 layers
            
-    def forward(self, x): 
+    def forward(self, x, mask=None): 
         b, n = x.shape
         assert n <= self.block_size, f"Cannot forward sequence of length {n}, block size is only {self.block_size}"
         tok_emb = self.token_embedding(x)   # token embeddings of shape (b, n, n_embd)
-        class_tokens = repeat(self.class_embedding, '() n d -> b n d', b = b)
-        embeddings = torch.cat((class_tokens, tok_emb), dim=1) # i.e. [b, n+1, dim]
-        embeddings += self.pos_embedding[:, :(n + 1)]
+
+        # for regression we add the CLS token to the start of the tensor
+        if self.config['mask_prob'] == 0:
+            class_tokens = repeat(self.class_embedding, '() n d -> b n d', b = b)
+            embeddings = torch.cat((class_tokens, tok_emb), dim=1) # i.e. [b, n+1, dim]
+            embeddings += self.pos_embedding[:, :(n + 1)]  
+        else:
+            # running as a masked language model
+            embeddings = tok_emb + self.pos_embedding
+
         x = self.emb_dropout(embeddings)
         tform_out = self.transformer(x)
-        logits = self.regression_head(tform_out[:, 0, :])  # [b, 1, emb] just apply to the class token
-        return logits, tform_out
+
+        # Run in Masked Language Model (MLM) mode
+        if mask is not None:
+            logits = self.lm_head(tform_out)  # ??????
+            # print('mask shape:', mask.shape)
+            # print('logits shape:', logits.shape)
+            mask = mask.view(-1)
+            # print('mask.view(-1) shape:', mask.view(-1).shape)
+            # print('logits.view(-1, self.vocab_size) shape:', logits.view(-1, self.vocab_size).shape)
+            mask_idx = torch.nonzero(mask)
+            loss = F.cross_entropy(logits.view(-1, self.vocab_size),  mask, reduction='none')
+            loss = loss.sum() / mask_idx.shape[0]
+        else:
+            # else running in regression mode
+            loss = 0
+            logits = self.regression_head(tform_out[:, 0, :])  # [b, 1, emb] just apply to the class token
+
+        return logits, loss, tform_out
 
 
 
@@ -106,13 +140,21 @@ class TFormMLP_Lightning(LightningModule):
         self.criterion = nn.MSELoss() if config['loss_type'] == 'mse' else nn.L1Loss()
         self.save_hyperparameters()
 
-    def forward(self, x):
-        return self.model(x)
+    def forward(self, x, mask=None):
+        return self.model(x, mask)
 
     def common_forward(self, batch, batch_idx):
-        x, y, names = batch
-        y_hat, _ = self.model(x)
-        loss = self.criteriion(y_hat, y)
+        x, mask, y, names = batch
+
+        # Masked Language Model (MLM) mode
+        if self.config['mask_prob'] > 0:
+            y_hat, loss, tform_out = self.model(x, mask)     
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.config['grad_norm_clip'])
+        else:   
+            # Regression mode
+            y_hat, _, _ = self.model(x)
+            loss = self.criterion(y_hat, y)
+
         return loss, y_hat, y
 
     def training_step(self, batch, batch_idx):
