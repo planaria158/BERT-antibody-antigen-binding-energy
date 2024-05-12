@@ -125,13 +125,16 @@ class scFv_Dataset(Dataset):
         seq = self.df.loc[idx, 'sequence_a']
 
         # apologies: next couple lines are overly dataset-specific
-        if self.inference == False and self.config['seq_mask_prob'] == 0.0: # training or test mode
-            Kd = self.df.loc[idx, 'Kd'] if self.inference == False else 0
-            assert not math.isnan(Kd), 'Kd is nan'
-            name = 'none'
-        else:
-            Kd = 0 # inference mode - Kd is not available
-            name = self.df.loc[idx, 'description_a']
+        Kd = 0
+        name = 'none'
+        if self.config['seq_mask_prob'] == 0.0:
+            if self.inference == False: # training or test mode
+                Kd = self.df.loc[idx, 'Kd'] if self.inference == False else 0
+                assert not math.isnan(Kd), 'Kd is nan'
+                name = 'none'
+            else:
+                Kd = 0 # inference mode - Kd is not available
+                name = self.df.loc[idx, 'description_a']
 
         assert Kd >= 0.0, 'not allowing for negative affinities'
 
