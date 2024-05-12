@@ -58,7 +58,8 @@ def main():
         print('Restarting from checkpoint: ', train_config['checkpoint_name'])
         model = TFormMLP_Lightning.load_from_checkpoint(checkpoint_path=train_config['checkpoint_name'], 
                                                         model_config=model_config,
-                                                        config=train_config)
+                                                        config=train_config,
+                                                        strict=False)
     else:
         print('Starting from new model instance')
         model = TFormMLP_Lightning(model_config, train_config) 

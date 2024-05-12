@@ -53,7 +53,7 @@ class scFv_Dataset(Dataset):
         self.last_aa_idx = len(self.chars) - 4
         print('vocabulary:', self.chars)
         data_size, vocab_size = self.df.shape[0], len(self.chars)
-        print('data has %d rows, %d vocab size (unique).' % (data_size, vocab_size))
+        print('data has %d rows, %d vocab size' % (data_size, vocab_size))
 
         # encoding and decoding residues
         self.stoi = { ch:i for i,ch in enumerate(self.chars) }
@@ -69,11 +69,12 @@ class scFv_Dataset(Dataset):
     #-------------------------------------------------------
     def create_mask(self, dix):
         mask = torch.zeros_like(dix)
-        
+
+        # prepend the CLS token to the sequence
+        dix = torch.cat((torch.tensor([self.stoi['CLS']], dtype=torch.long), dix))
+
         # training will be masked language model
         if self.config['mask_prob'] > 0:
-            # prepend the CLS token to the sequence
-            dix = torch.cat((torch.tensor([self.stoi['CLS']], dtype=torch.long), dix))
 
             # get number of tokens to mask
             n_pred = max(1, int(round(self.block_size * self.config['mask_prob'])))
@@ -85,19 +86,24 @@ class scFv_Dataset(Dataset):
 
             # copy the actual tokens to be masked, to the mask
             mask[masked_idx] = dix[masked_idx]
-            # ... and overwrite them in the data
+            # And replace all masked tokens with the MASK token
+            dix[masked_idx] = self.stoi['MASK']
+
+            # Standard 80-10-10 corruption strategy
             # with 80% probability, change to MASK token
             # with 10% probability, change to random aa token
             # with 10% probability, keep the same token
-            p8 = int(math.ceil(n_pred*0.8))
-            p9 = int(math.ceil(n_pred*0.9))
-            mask_token_idxs = masked_idx[0:p8]
-            rand_aa_idxs = masked_idx[p8:p9]
-            keep_idxs = masked_idx[p9:]
-            assert(masked_idx.shape[0] == mask_token_idxs.shape[0] + rand_aa_idxs.shape[0] + keep_idxs.shape[0])
-            
-            dix[mask_token_idxs] = self.stoi['MASK']    
-            dix[rand_aa_idxs] = self.get_random_aa_tokens(rand_aa_idxs.shape[0])
+            # This has been disputed by Wettig et. al. https://arxiv.org/pdf/2202.08005
+            # Therefore, I'll not do it this way.
+            # p8 = int(math.ceil(n_pred*0.8))
+            # p9 = int(math.ceil(n_pred*0.9))
+            # mask_token_idxs = masked_idx[0:p8]
+            # rand_aa_idxs = masked_idx[p8:p9]  Replacing 10% with random amino acids appears to negatively impact the model
+            # keep_idxs = masked_idx[p9:]
+            # assert(masked_idx.shape[0] == mask_token_idxs.shape[0] + rand_aa_idxs.shape[0] + keep_idxs.shape[0])            
+            # dix[mask_token_idxs] = self.stoi['MASK']    
+            # dix[rand_aa_idxs] = self.get_random_aa_tokens(rand_aa_idxs.shape[0])
+
 
         return dix, mask
 
@@ -119,7 +125,7 @@ class scFv_Dataset(Dataset):
         seq = self.df.loc[idx, 'sequence_a']
 
         # apologies: next couple lines are overly dataset-specific
-        if self.inference == False: # training or test mode
+        if self.inference == False and self.config['seq_mask_prob'] == 0.0: # training or test mode
             Kd = self.df.loc[idx, 'Kd'] if self.inference == False else 0
             assert not math.isnan(Kd), 'Kd is nan'
             name = 'none'

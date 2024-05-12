@@ -24,7 +24,6 @@ train_params:
   #---------------------------------------------------------------------------
   mask_prob: 0.15      # for pre-training in masked-language-modeling task
 
-
   #---------------------------------------------------------------------------
   # general training settings
   #---------------------------------------------------------------------------
@@ -34,15 +33,15 @@ train_params:
 
   accelerator : 'mps'   # cpu, gpu, mps(macbook M2 chip)
   devices: 1
-  batch_size: 64 # 160
+  batch_size: 256
   num_workers: 10
   grad_norm_clip : 1.0
   num_epochs : 5000
-  log_dir :        '../lightning_logs/tform_mlp_model/pretrain/cleaned-4b-data/'
-  train_data_path: '../data/q_cleaned_4b_train_set.csv'
+  log_dir :        '../lightning_logs/tform_mlp_model/pretrain/high_q_pretrain_set/'
+  train_data_path: '../data/high_q_pretrain_set.csv'  # sequences with high q_values and NOT included in the regression training set
   val_data_path:   '../data/q_cleaned_4b_val_set.csv'
 
-  checkpoint_name: None
+  checkpoint_name: None 
   learning_rate : 0.0001
   lr_gamma: 0.9995     # for exponential learning rate decay
   betas : [0.9, 0.95]
