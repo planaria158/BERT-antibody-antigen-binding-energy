@@ -11,7 +11,7 @@ from datasets.scFv_dataset import scFv_Dataset as dataset
 #----------------------------------------------------------------------
 def main():
     # Read the config
-    config_path = '../config/tform_mlp_params.yaml'  
+    config_path = '../config/tform_params.yaml'  
     with open(config_path, 'r') as file:
         try:
             config = yaml.safe_load(file)
@@ -44,7 +44,9 @@ def main():
     train_loader = DataLoader(train_dataset, shuffle=True, pin_memory=True, 
                               batch_size=train_config['batch_size'], 
                               num_workers=train_config['num_workers'],
-                              persistent_workers=True)
+                              persistent_workers=True,
+                              drop_last=True) # sometimes the very last batch is size 1
+                                              # and batchnorm layers don't like that)
     
     val_loader = DataLoader(val_dataset, shuffle=False, pin_memory=True, 
                             batch_size=train_config['batch_size'], 

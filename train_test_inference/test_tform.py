@@ -12,7 +12,7 @@ from datasets.scFv_dataset import scFv_Dataset as dataset
 #----------------------------------------------------------------------
 def main():
     # Read the config
-    config_path = '../config/tform_mlp_params.yaml'  
+    config_path = '/Users/markthompson/Documents/dev/a-alphaBio-homework/config/tform_params.yaml'  #'../config/tform_params.yaml'  
     with open(config_path, 'r') as file:
         try:
             config = yaml.safe_load(file)
@@ -60,7 +60,7 @@ def main():
     logger = TensorBoardLogger(save_dir=os.getcwd(), name=train_config['log_dir'], default_hp_metric=False)
 
     print('Using', test_config['accelerator'])
-    trainer = pl.Trainer(strategy='ddp', 
+    trainer = pl.Trainer(#strategy='ddp', 
                          accelerator=test_config['accelerator'], 
                          devices=test_config['devices'],
                          max_epochs=1,   

@@ -1,0 +1,73 @@
+
+model_params:
+  block_size: 248    # 247 aa residues (max length of holdout set) + CLS token (if needed)
+  vocab_size : 24    # 20 amino acids + special tokens (CLS, X, PAD, MASK)                 
+  num_heads: 8 
+  dim_head: 64
+  num_layers: 6
+  emb_dim: 256  
+  # aa_groups_size: 5     # none, polar, nonpolar, negative, positive
+  # pos_variab_size : 10  # sequence position variability encoded into 10 groups
+
+
+train_params:
+  #---------------------------------------------------------------------------
+  # settings specific to regression training
+  #---------------------------------------------------------------------------
+  loss_type:     'mse'  # 'mae', 'mse'  i.e. mean-avg-error, mean-squared-error
+  sequence_regularize: True
+  seq_mask_prob:  0.05 # regularization: probability of masking an amino acid 
+                       # (this masks ~10-15 residues in seq of 242 if prob = 0.05)
+
+  #---------------------------------------------------------------------------
+  # setting specific to masked language training
+  #---------------------------------------------------------------------------
+  mask_prob: 0 #0.15      # for pre-training in masked-language-modeling task
+
+  #---------------------------------------------------------------------------
+  # general training settings
+  #---------------------------------------------------------------------------
+  tform_dropout: 0.10
+  emb_dropout: 0.10
+  mlp_dropout: 0.20
+
+  accelerator : 'mps'   # cpu, gpu, mps(macbook M2 chip)
+  devices: 1
+  batch_size: 256
+  num_workers: 10
+  grad_norm_clip : 1.0
+  num_epochs : 5000
+  log_dir :        '../lightning_logs/tform_mlp_model/pretrain/high_q_pretrain_set/'
+  train_data_path: '../data/high_q_pretrain_set.csv'  # sequences with high q_values and NOT included in the regression training set
+  val_data_path:   '../data/q_cleaned_4b_val_set.csv'
+
+  checkpoint_name: None 
+  learning_rate : 0.0001
+  lr_gamma: 0.9995     # for exponential learning rate decay
+  betas : [0.9, 0.95]
+  checkpoint_every_n_train_steps : 100
+  save_top_k : 10
+  monitor: 'val_loss'  
+  mode: 'min'
+  log_every_nsteps: 10
+  test_results_folder:      '../test_results/tform_mlp_model/cleaned-4b-data/'
+  inference_results_folder: '../inference_results/tform_mlp_model/cleaned-4b-data/'
+
+test_params:
+  accelerator : 'gpu' # cpu, gpu, mps(macbook M2 chip)
+  devices: 1
+  batch_size: 160
+  num_workers: 2
+  checkpoint_name: None
+  test_data_path:  '../data/q_cleaned_4b_test_set.csv'
+
+inference_params:
+  accelerator : 'gpu' # cpu, gpu, mps(macbook M2 chip)
+  devices: 1
+  batch_size: 160
+  num_workers: 2
+  checkpoint_name:     None
+  inference_data_path: '../data/alphaseq_data_hold_out.csv'
+
+seed : 3407
+

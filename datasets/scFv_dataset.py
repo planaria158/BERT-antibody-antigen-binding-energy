@@ -43,6 +43,9 @@ class scFv_Dataset(Dataset):
         self.block_size = block_size
         self.inference = inference
         self.regularize = regularize # sequence flipping etc...
+        assert config['train_type'] in ['mask_lang_model', 'regression'], 'train_type must be either "mask_lang_model" or "regression"'
+        self.train_type = config['train_type']
+
         print('reading the data from:', csv_file_path)
         self.df = pd.read_csv(csv_file_path, skiprows=skiprows)
         
@@ -74,7 +77,7 @@ class scFv_Dataset(Dataset):
         dix = torch.cat((torch.tensor([self.stoi['CLS']], dtype=torch.long), dix))
 
         # training will be masked language model
-        if self.config['mask_prob'] > 0:
+        if self.train_type == 'mask_lang_model':
 
             # get number of tokens to mask
             n_pred = max(1, int(round(self.block_size * self.config['mask_prob'])))
@@ -90,11 +93,9 @@ class scFv_Dataset(Dataset):
             dix[masked_idx] = self.stoi['MASK']
 
             # Standard 80-10-10 corruption strategy
-            # with 80% probability, change to MASK token
-            # with 10% probability, change to random aa token
-            # with 10% probability, keep the same token
+            # with 80% MASK token, 10% random aa token, 10% keep the same token
             # This has been disputed by Wettig et. al. https://arxiv.org/pdf/2202.08005
-            # Therefore, I'll not do it this way.
+            # Therefore, I will not use 80-10-10 corruption strategy
             # p8 = int(math.ceil(n_pred*0.8))
             # p9 = int(math.ceil(n_pred*0.9))
             # mask_token_idxs = masked_idx[0:p8]
@@ -103,7 +104,6 @@ class scFv_Dataset(Dataset):
             # assert(masked_idx.shape[0] == mask_token_idxs.shape[0] + rand_aa_idxs.shape[0] + keep_idxs.shape[0])            
             # dix[mask_token_idxs] = self.stoi['MASK']    
             # dix[rand_aa_idxs] = self.get_random_aa_tokens(rand_aa_idxs.shape[0])
-
 
         return dix, mask
 
@@ -127,7 +127,7 @@ class scFv_Dataset(Dataset):
         # apologies: next couple lines are overly dataset-specific
         Kd = 0
         name = 'none'
-        if self.config['seq_mask_prob'] == 0.0:
+        if self.train_type == 'regression':
             if self.inference == False: # training or test mode
                 Kd = self.df.loc[idx, 'Kd'] if self.inference == False else 0
                 assert not math.isnan(Kd), 'Kd is nan'
@@ -151,7 +151,7 @@ class scFv_Dataset(Dataset):
         # Sequence-level regularization & augmentation can be done here
         # Only do this if we are training for regression 
         # Do not do this for masked language model training
-        if self.config['mask_prob'] == 0 and self.regularize:
+        if self.train_type == 'regression' and self.regularize == True:
             # mask a small perentage of the amino acids with the MASK token
             # acts like a dropout.  This is NOT the same as the masked language model training
             # and the model should not be trained with this regularization during masked 
@@ -168,8 +168,7 @@ class scFv_Dataset(Dataset):
         # Append with PAD tokens if necessary
         if dix.shape[0] < self.block_size:
             dix = torch.cat((dix, torch.tensor([self.stoi['PAD']] * (self.block_size - len(dix)), dtype=torch.long)))
-            if mask != None:
-                mask = torch.cat((mask, torch.tensor([0] * (self.block_size - len(mask)), dtype=torch.long)))
+            mask = torch.cat((mask, torch.tensor([0] * (self.block_size - len(mask)), dtype=torch.long)))
 
 
         return dix, mask, torch.tensor([Kd], dtype=torch.float32), name

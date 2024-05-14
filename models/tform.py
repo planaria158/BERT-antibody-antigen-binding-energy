@@ -47,34 +47,56 @@ class TFormMLP(nn.Module):
         emb_dim   = model_config['emb_dim']
         self.vocab_size = model_config['vocab_size']
         self.block_size = model_config['block_size']
+        assert config['train_type'] in ['mask_lang_model', 'regression'], 'train_type must be either "mask_lang_model" or "regression"'
+        self.train_type = config['train_type']
         self.config = config
 
-        self.token_embedding = nn.Embedding(model_config['vocab_size'], emb_dim) # token embedding
-        self.pos_embedding   = nn.Parameter(torch.randn(1, self.block_size, emb_dim))
-
-        # class_embedding is deprecated
-        self.class_embedding = nn.Parameter(torch.randn(1, 1, emb_dim))  
-
+        # old constant pos embedding..  self.pos_embedding = nn.Parameter(torch.randn(1, self.block_size, emb_dim))
+        self.token_embedding = nn.Embedding(self.vocab_size, emb_dim) # token embedding
+        self.pos_embedding   = nn.Embedding(self.block_size, emb_dim) # position embedding 
         self.emb_dropout = nn.Dropout(p=config['emb_dropout'])
         self.transformer = TransformerEncoder(model_config['num_layers'], emb_dim, model_config['num_heads'], 
                                               model_config['dim_head'], config['tform_dropout'])
 
-        # The prediction heads
         # The Masked Language Model (MLM) head                                      
         self.mlm_head = nn.Linear(emb_dim, self.vocab_size, bias=False) # predictions are tokens
         # The residualMLP regression head
         self.regression_head = ResidualMLP(config, emb_dim, num_layers=4) # predictions are real values
+
+        # This generally means we've just loaded pretrained weights from
+        # a fine tuned model and we want to freeze the encoder
+        # In this case, only the regression head will be trained on fine-tune dataset
+        if config['freeze_base_model'] == True:
+            print('freezing base model')
+            for param in self.transformer.parameters():
+                param.requires_grad = False
+
+            for param in self.token_embedding.parameters():
+                param.requires_grad = False
+
+            for param in self.pos_embedding.parameters():
+                param.requires_grad = False
+            
+            for param in self.emb_dropout.parameters():
+                params.requires_grad = False
+            
+            for param in self.mlm_head.parameters():
+                param.requires_grad = False
+
            
     def forward(self, x, mask=None): 
         b, n = x.shape
+        device = x.device
         assert n <= self.block_size, f"Cannot forward sequence of length {n}, block size is only {self.block_size}"
-        tok_emb = self.token_embedding(x)   # token embeddings of shape (b, n, n_embd)
-        embeddings = tok_emb + self.pos_embedding
+        pos = torch.arange(0, n, dtype=torch.long, device=device).unsqueeze(0) # shape (1, t) 
+        tok_emb = self.token_embedding(x) # token embeddings of shape (b, n, n_embd)        
+        pos_emb = self.pos_embedding(pos) # position embeddings of shape (1, t, n_embd)
+        embeddings = tok_emb + pos_emb
         x = self.emb_dropout(embeddings)
         tform_out = self.transformer(x)
 
         # Run in Masked Language Model (MLM) mode
-        if mask is not None:
+        if self.train_type == 'mask_lang_model':
             logits = self.mlm_head(tform_out) # [b, n, vocab_size]  
             mask = mask.view(-1)
             mask_idx = torch.nonzero(mask)
@@ -122,6 +144,8 @@ class TFormMLP_Lightning(LightningModule):
         self.model = TFormMLP(model_config, config)
         assert config['loss_type'] in ['mse', 'mae'], 'loss_type must be either "mse" or "mae"'
         self.criterion = nn.MSELoss() if config['loss_type'] == 'mse' else nn.L1Loss()
+        assert config['train_type'] in ['mask_lang_model', 'regression'], 'train_type must be either "mask_lang_model" or "regression"'
+        self.train_type = config['train_type']
         self.save_hyperparameters()
 
     def forward(self, x, mask=None):
@@ -131,7 +155,7 @@ class TFormMLP_Lightning(LightningModule):
         x, mask, y, names = batch
 
         # Masked Language Model (MLM) mode
-        if self.config['mask_prob'] > 0:
+        if self.train_type == 'mask_lang_model':
             y_hat, loss, tform_out = self.model(x, mask)     
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.config['grad_norm_clip'])
         else:   
