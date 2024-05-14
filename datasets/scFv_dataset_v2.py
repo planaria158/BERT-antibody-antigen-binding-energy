@@ -28,7 +28,7 @@ class scFv_Dataset_v2(Dataset):
         # 20 naturally occuring amino acids in human proteins plus MASK token, 
         # 'X' is a special token for unknown amino acids, CLS token is for classification, and PAD for padding
         self.chars = ['CLS', 'A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 
-                      'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y', 'X', 'MASK', 'PAD']
+                      'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y', 'X', 'MASK', 'PAD', 'SEP']
         self.first_aa = self.chars[1]
         self.last_aa = self.chars[20]
         print('vocabulary:', self.chars)

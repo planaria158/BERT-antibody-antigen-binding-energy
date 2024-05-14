@@ -1,7 +1,7 @@
 
 model_params:
   block_size: 248    # 247 aa residues (max length of holdout set) + CLS token (if needed)
-  vocab_size : 24    # 20 amino acids + special tokens (CLS, X, PAD, MASK)                 
+  vocab_size : 25    # 20 amino acids + special tokens (CLS, X, PAD, MASK, SEP)                 
   num_heads: 8 
   dim_head: 64
   num_layers: 6

@@ -51,7 +51,7 @@ class scFv_Dataset(Dataset):
         
         # 20 amino acids + special tokens (CLS, X, PAD, MASK) 
         self.chars = ['CLS', 'A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 
-                      'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y', 'X', 'MASK', 'PAD']
+                      'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y', 'X', 'MASK', 'PAD', 'SEP']
         self.first_aa_idx = 1
         self.last_aa_idx = len(self.chars) - 4
         print('vocabulary:', self.chars)
@@ -71,10 +71,10 @@ class scFv_Dataset(Dataset):
     # and the corresponding modified dix sequence
     #-------------------------------------------------------
     def create_mask(self, dix):
-        mask = torch.zeros_like(dix)
 
         # prepend the CLS token to the sequence
         dix = torch.cat((torch.tensor([self.stoi['CLS']], dtype=torch.long), dix))
+        mask = torch.zeros_like(dix)
 
         # training will be masked language model
         if self.train_type == 'mask_lang_model':
