@@ -105,6 +105,7 @@ class scFv_Dataset(Dataset):
             # dix[mask_token_idxs] = self.stoi['MASK']    
             # dix[rand_aa_idxs] = self.get_random_aa_tokens(rand_aa_idxs.shape[0])
 
+        assert(dix.shape[0] == mask.shape[0]), 'dix and mask shape is not equal'
         return dix, mask
 
 
@@ -122,6 +123,7 @@ class scFv_Dataset(Dataset):
     # Get the sequence, mask, affinity and name data
     #-------------------------------------------------------
     def __getitem__(self, idx):
+
         seq = self.df.loc[idx, 'sequence_a']
 
         # apologies: next couple lines are overly dataset-specific

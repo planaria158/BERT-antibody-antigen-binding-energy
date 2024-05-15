@@ -162,7 +162,7 @@ class MLP(nn.Module):
     def __init__(self, input_dim, dropout):
         super(MLP, self).__init__()
 
-        mlp_hidden_mults = (4, 4, 3, 2) # fixed architecture 
+        mlp_hidden_mults = (4, 2) # fixed architecture 
 
         hidden_dimensions = [input_dim * t for t in  mlp_hidden_mults]
         all_dimensions = [input_dim, *hidden_dimensions, 1]

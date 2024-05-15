@@ -12,6 +12,7 @@ import torch.nn.functional as F
 from einops.layers.torch import Rearrange
 from einops import repeat, rearrange
 from models.residual_mlp import ResidualMLP
+from models.model_parts import MLP
 from models.model_parts import TransformerEncoder
 from train_test_inference.test_metrics import test_metrics
 
@@ -61,7 +62,9 @@ class TFormMLP(nn.Module):
         # The Masked Language Model (MLM) head                                      
         self.mlm_head = nn.Linear(emb_dim, self.vocab_size, bias=False) # predictions are tokens
         # The residualMLP regression head
+        print('Consider using a much simpler regression head!!!!')
         self.regression_head = ResidualMLP(config, emb_dim, num_layers=4) # predictions are real values
+        # self.regression_head = MLP(emb_dim, config['mlp_dropout'])
 
         # This generally means we've just loaded pretrained weights from
         # a fine tuned model and we want to freeze the encoder
@@ -114,45 +117,6 @@ class TFormMLP(nn.Module):
 
         return logits, loss, tform_out
 
-
-    # @torch.no_grad()
-    # def generate(self, idx, max_new_tokens, mask_token, temperature=1.0, do_sample=False, top_k=None):
-    #     """
-    #     Take a conditioning sequence of indices idx (LongTensor of shape (b,t)) and complete
-    #     the sequence max_new_tokens times, feeding the predictions back into the model each time.
-    #     Most likely you'll want to make sure to be in model.eval() mode of operation for this.
-    #     """
-    #     device = idx.device
-
-    #     for _ in range(max_new_tokens):
-    #         # if the sequence context is growing too long we must crop it at block_size
-    #         idx_cond = idx if idx.size(1) <= (self.block_size - 1) else idx[:, -self.block_size+1:]
-
-    #         mask = torch.cat((torch.zeros_like(idx_cond).to(device), torch.tensor([[mask_token]]).to(device)), 1)
-    #         idx_cond = torch.cat((idx_cond, torch.tensor([[mask_token]]).to(device)), 1)
-
-    #         # forward to the model to get the logits for the index in the sequence
-    #         logits, _ = self(idx_cond, mask)
-    #         # pluck the logits at the final step and scale by desired temperature
-    #         logits = logits[:, -1, :] / temperature
-    #         # optionally crop the logits to only the top k options
-    #         if top_k is not None:
-    #             v, _ = torch.topk(logits, top_k)
-    #             logits[logits < v[:, [-1]]] = -float('Inf')
-    #         # apply softmax to convert logits to (normalized) probabilities
-    #         probs = F.softmax(logits, dim=-1)
-    #         # either sample from the distribution or take the most likely element
-
-    #         if do_sample:
-    #             idx_next = torch.multinomial(probs, num_samples=1)
-    #         else:
-    #             _, idx_next = torch.topk(probs, k=1, dim=-1)
-    #         # append sampled index to the running sequence and continue
-    #         idx = torch.cat((idx, idx_next), dim=1)
-
-    #     return idx
-
-        
 
 class TFormMLP_Lightning(LightningModule):
     """

@@ -77,6 +77,7 @@ class scFv_paired_pretrain_Dataset(Dataset):
             # And replace all masked tokens with the MASK token
             dix[masked_idx] = self.stoi['MASK']
 
+        assert(dix.shape[0] == mask.shape[0]), 'dix and mask shape is not equal'
         return dix, mask
 
 
@@ -110,6 +111,20 @@ class scFv_paired_pretrain_Dataset(Dataset):
         # hardwired for now
         Kd = 0
         name = 'none'
+
+        # make sure both seq1 and seq2 are strings
+        if isinstance(seq1, str) == False :
+            print('WARNING, seq1 is not a string:', seq1, ', idx:', idx, ', picking another row at random')
+            idx = np.random.randint(0, self.df.shape[0])
+            seq1 = self.df.loc[idx, 'sequence_alignment_aa_heavy']
+            seq2 = self.df.loc[idx, 'sequence_alignment_aa_light']
+
+        if isinstance(seq2, str) == False :
+            print('WARNING, seq2 is not a string:', seq1, ', idx:', idx, ', picking another row at random')
+            idx = np.random.randint(0, self.df.shape[0])
+            seq1 = self.df.loc[idx, 'sequence_alignment_aa_heavy']
+            seq2 = self.df.loc[idx, 'sequence_alignment_aa_light']
+
 
         chunk1 = self.get_chunk(seq1)
         chunk2 = self.get_chunk(seq2)

@@ -7,7 +7,7 @@ import torch
 from torch import nn
 # from pytorch_lightning.core import LightningModule
 
-class Layer(nn.Module):
+class Layer_simple(nn.Module):
     """
         A single layer of an MLP type network
         Args:
@@ -18,7 +18,7 @@ class Layer(nn.Module):
             activation: whether to apply GELU activation
     """
     def __init__(self, in_dim, out_dim, dropout=0.0, normalize=True, activation=True):
-        super(Layer, self).__init__()
+        super(Layer_simple, self).__init__()
         self.normalize = normalize
         self.activation = activation
         self.linear = nn.Linear(in_dim, out_dim)
@@ -51,12 +51,12 @@ class ResidualMLP(nn.Module):
         in_dim = self.in_dim
         for idx in range(self.num_layers-1):
             print('making residual mlp layer in_dim, out_dim:', in_dim, self.out_dim)
-            layer = Layer(in_dim, self.out_dim, config['mlp_dropout'])
+            layer = Layer_simple(in_dim, self.out_dim, config['mlp_dropout'])
             self.net.append(layer)
 
         # For regression, the very last Layer has no normalization or activation
         print('making final dense mlp layer in_dim, out_dim:', in_dim, 1)
-        layer = Layer(self.out_dim, 1, normalize=False, activation=False)
+        layer = Layer_simple(self.out_dim, 1, normalize=False, activation=False)
         self.net.append(layer)
 
     def forward(self, x_in):

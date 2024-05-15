@@ -19,7 +19,8 @@ train_params:
   sequence_regularize: True
   seq_mask_prob:  0.05 # regularization: probability of masking an amino acid 
                        # (this masks ~10-15 residues in seq of 242 if prob = 0.05)
-  freeze_base_model: False
+
+  freeze_base_model: False # !!!DON'T FREEZE THE WEIGHTS FOR FINE TUNING
 
   #---------------------------------------------------------------------------
   # setting specific to masked language training
@@ -33,27 +34,27 @@ train_params:
   emb_dropout:   0.10
   mlp_dropout:   0.20
 
-  accelerator : 'mps'   # cpu, gpu, mps(macbook M2 chip)
+  accelerator : 'mps'     # cpu, gpu, mps(macbook M2 chip)
   devices: 1
   batch_size: 256
   num_workers: 5
   grad_norm_clip : 1.0
-  num_epochs : 500
+  num_epochs : 500        # for fine-tuning use smaller number of epochs, e.g. < 10
   log_dir :        '../lightning_logs/tform_mlp_model/pretrain/paired_1_set/'
-  train_data_path: '../data/oas_2/paired/paired_1_train_set.csv' 
+  train_data_path: '../data/oas_2/paired/paired_1_train_set.csv'
   val_data_path:   '../data/oas_2/paired/paired_1_val_set.csv'
 
   checkpoint_name: None
-  learning_rate : 0.0001
-  lr_gamma: 0.9995     # for exponential learning rate decay
+  learning_rate : 0.0001  # for fine-tuning use 0.00001
+  lr_gamma: 0.9995        # for exponential learning rate decay
   betas : [0.9, 0.95]
   checkpoint_every_n_train_steps : 100
   save_top_k : 10
   monitor: 'val_loss'  
   mode: 'min'
   log_every_nsteps: 10
-  test_results_folder:      '../test_results/tform_mlp_model/pretrain/paired_1_set/'
-  inference_results_folder: '../inference_results/tform_mlp_model/cleaned-4b-data/'
+  test_results_folder:      None # '../test_results/tform_mlp_model/pretrain/paired_1_set/'
+  inference_results_folder: None # '../inference_results/tform_mlp_model/cleaned-4b-data/'
 
 test_params:
   accelerator : 'mps' # cpu, gpu, mps(macbook M2 chip)
