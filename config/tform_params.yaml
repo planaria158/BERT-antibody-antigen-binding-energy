@@ -36,6 +36,7 @@ train_params:
 
   accelerator : 'mps'     # cpu, gpu, mps(macbook M2 chip)
   devices: 1
+  precision: '32-true'  # '32-true', '16-mixed', 'bf16-mixed'
   batch_size: 256
   num_workers: 5
   grad_norm_clip : 1.0
@@ -44,7 +45,7 @@ train_params:
   train_data_path: '../data/oas_2/paired/paired_1_train_set.csv'
   val_data_path:   '../data/oas_2/paired/paired_1_val_set.csv'
 
-  checkpoint_name: None
+  checkpoint_name: '../lightning_logs/tform_mlp_model/pretrain/paired_1_set/version_0/checkpoints/epoch=14-step=5000-val_loss=0.62-loss=0.66.ckpt'
   learning_rate : 0.0001  # for fine-tuning use 0.00001
   lr_gamma: 0.9995        # for exponential learning rate decay
   betas : [0.9, 0.95]

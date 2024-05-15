@@ -86,13 +86,15 @@ def main():
     logger = TensorBoardLogger(save_dir=os.getcwd(), name=train_config['log_dir'], default_hp_metric=False)
 
     print('Using', train_config['accelerator'])
+    print('Using precision:', train_config['precision'])
     trainer = pl.Trainer(#strategy='ddp', 
                          accelerator=train_config['accelerator'], 
                          devices=train_config['devices'],
                          max_epochs=train_config['num_epochs'],   
                          logger=logger, 
                          log_every_n_steps=train_config['log_every_nsteps'], 
-                         callbacks=[checkpoint_callback],)   
+                         callbacks=[checkpoint_callback],
+                         precision=train_config['precision'],)
 
 
     trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=val_loader)
