@@ -171,8 +171,8 @@ class MLP(nn.Module):
         for ind, (in_dim, out_dim) in enumerate(dims_pairs):
             print('making mlp. in_dim, out_dim:', in_dim, out_dim)
             if ind >= (len(dims_pairs) - 1) :
-                # For regression, the very last Layer has no dropout, normalization, and activation
-                layer = Layer(in_dim, out_dim, normalize=False, activation=False)
+                # For regression, the very last Layer normalization or activation
+                layer = Layer(in_dim, out_dim, dropout, normalize=False, activation=False)
             else:
                 layer = Layer(in_dim, out_dim, dropout)
             
