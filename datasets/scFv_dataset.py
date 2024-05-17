@@ -131,7 +131,7 @@ class scFv_Dataset(Dataset):
         name = 'none'
         if self.train_type == 'regression':
             if self.inference == False: # training or test mode
-                Kd = self.df.loc[idx, 'Kd'] if self.inference == False else 0
+                Kd = self.df.loc[idx, 'Kd']
                 assert not math.isnan(Kd), 'Kd is nan'
                 name = 'none'
             else:

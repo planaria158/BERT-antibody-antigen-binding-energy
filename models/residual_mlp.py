@@ -56,7 +56,7 @@ class ResidualMLP(nn.Module):
 
         # For regression, the very last Layer has no normalization or activation
         print('making final dense mlp layer in_dim, out_dim:', in_dim, 1)
-        layer = Layer_simple(self.out_dim, 1, config['mlp_dropout'], normalize=False, activation=False)
+        layer = Layer_simple(self.out_dim, 1, normalize=False, activation=False)
         self.net.append(layer)
 
     def forward(self, x_in):

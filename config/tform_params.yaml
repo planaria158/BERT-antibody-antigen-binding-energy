@@ -10,22 +10,22 @@ model_params:
 train_params:
 
   # Either mask-language-model or regression
-  train_type: 'mask_lang_model'  # 'mask_lang_model', 'regression'
+  train_type: 'regression'  # 'mask_lang_model', 'regression'
 
   #---------------------------------------------------------------------------
   # settings specific to regression training
   #---------------------------------------------------------------------------
   loss_type:     'mse'  # 'mae', 'mse'  i.e. mean-avg-error, mean-squared-error
-  sequence_regularize: True
+  sequence_regularize: False #True
   seq_mask_prob:  0.05 # regularization: probability of masking an amino acid 
                        # (this masks ~10-15 residues in seq of 242 if prob = 0.05)
 
-  freeze_base_model: False # !!!DON'T FREEZE THE WEIGHTS FOR FINE TUNING
+  freeze_base_model: False #True 
 
   #---------------------------------------------------------------------------
   # setting specific to masked language training
   #---------------------------------------------------------------------------
-  mask_prob: 0.15      # for pre-training in masked-language-modeling task
+  mask_prob: 0 #0.15      # for pre-training in masked-language-modeling task
 
   #---------------------------------------------------------------------------
   # general training settings
@@ -40,13 +40,17 @@ train_params:
   batch_size: 256
   num_workers: 5
   grad_norm_clip : 1.0
-  num_epochs : 500        # for fine-tuning use smaller number of epochs, e.g. < 10
-  log_dir :        '../lightning_logs/tform_mlp_model/pretrain/paired_1_set/'
-  train_data_path: '../data/oas_2/paired/paired_1_train_set.csv'
-  val_data_path:   '../data/oas_2/paired/paired_1_val_set.csv'
+  num_epochs : 50        # for fine-tuning use smaller number of epochs, e.g. < 10
+  log_dir :        '../lightning_logs/tform_mlp_model/finetune/cleaned_3b_data/'  #pretrain/paired_1_set/'
+  train_data_path: '../data/q_cleaned_3b_train_set.csv'   #'../data/oas_2/paired/paired_1_train_set.csv'
+  val_data_path:   '../data/q_cleaned_3b_val_set.csv'   #'../data/oas_2/paired/paired_1_val_set.csv'
 
-  checkpoint_name: '../lightning_logs/tform_mlp_model/pretrain/paired_1_set/version_0/checkpoints/epoch=14-step=5000-val_loss=0.62-loss=0.66.ckpt'
-  learning_rate : 0.0001  # for fine-tuning use 0.00001
+  # a. just regression head: checkpoint_name: '../lightning_logs/tform_mlp_model/pretrain/paired_1_set/version_1/checkpoints/epoch=130-step=44000-val_loss=0.34-loss=0.33.ckpt'
+  # b. first full model checkpoint_name: '../lightning_logs/tform_mlp_model/finetune/cleaned_3b_data/version_1/checkpoints/epoch=23-step=700-val_loss=0.49-loss=0.59.ckpt'
+  # c  second full model checkpoint_name: '../lightning_logs/tform_mlp_model/finetune/cleaned_3b_data/version_2/checkpoints/epoch=49-step=1500-val_loss=0.29-loss=0.38.ckpt'
+  checkpoint_name: '../lightning_logs/tform_mlp_model/finetune/cleaned_3b_data/version_3/checkpoints/epoch=49-step=1500-val_loss=0.23-loss=0.30.ckpt'
+
+  learning_rate : 0.00001  #0.0001  # for fine-tuning use 0.00001
   lr_gamma: 0.9995        # for exponential learning rate decay
   betas : [0.9, 0.95]
   checkpoint_every_n_train_steps : 100

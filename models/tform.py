@@ -63,7 +63,7 @@ class TFormMLP(nn.Module):
         self.mlm_head = nn.Linear(emb_dim, self.vocab_size, bias=False) # predictions are tokens
         # The residualMLP regression head
         print('Consider using a much simpler regression head!!!!')
-        self.regression_head = ResidualMLP(config, emb_dim, num_layers=4) # predictions are real values
+        self.regression_head = ResidualMLP(config, emb_dim, num_layers=4) # predictions are single-value floats
         # self.regression_head = MLP(emb_dim, config['mlp_dropout'])
 
         # This generally means we've just loaded pretrained weights from

@@ -91,7 +91,8 @@ def main():
                          max_epochs=train_config['num_epochs'],   
                          logger=logger, 
                          log_every_n_steps=train_config['log_every_nsteps'], 
-                         callbacks=[checkpoint_callback],)   
+                         callbacks=[checkpoint_callback],
+                         precision=train_config['precision']) 
 
 
     trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=val_loader)
