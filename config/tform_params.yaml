@@ -35,8 +35,9 @@ train_params:
 
   accelerator : 'gpu'      # cpu, gpu, mps(macbook M2 chip)
   devices: 2
-  precision: 'bf16-mixed'  # '32-true', '16-mixed', 'bf16-mixed'
+  precision: '16-mixed'    # '32-true', '16-mixed', 'bf16-mixed'
   batch_size: 36
+  accumulate_grad_batches : 10
   num_workers: 10
   grad_norm_clip : 1.0
   num_epochs : 1000        # for fine-tuning use smaller number of epochs, e.g. < 10
@@ -48,7 +49,8 @@ train_params:
 
   learning_rate : 0.0001  # for fine-tuning use 0.00001
   lr_gamma: 0.9995        # for exponential learning rate decay
-  betas : [0.9, 0.95]
+  betas : [0.9, 0.98]
+  eps : 0.000001
   checkpoint_every_n_train_steps : 100
   save_top_k : 10
   monitor: 'val_loss'  

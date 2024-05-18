@@ -257,7 +257,8 @@ class TFormMLP_Lightning(LightningModule):
 
     def configure_optimizers(self):
         lr = self.config['learning_rate']
-        optimizer = torch.optim.AdamW(self.model.parameters(), betas=self.config['betas'], lr=lr)
+        optimizer = torch.optim.AdamW(self.model.parameters(), betas=self.config['betas'], 
+                                      lr=lr, eps=self.config['eps'])
         scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=self.config['lr_gamma'])
         return [optimizer], [scheduler]
 

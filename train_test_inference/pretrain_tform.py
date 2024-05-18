@@ -94,7 +94,8 @@ def main():
                          logger=logger, 
                          log_every_n_steps=train_config['log_every_nsteps'], 
                          callbacks=[checkpoint_callback],
-                         precision=train_config['precision'],)
+                         precision=train_config['precision'],
+                         accumulate_grad_batches=train_config['accumulate_grad_batches'])
 
 
     trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=val_loader)
