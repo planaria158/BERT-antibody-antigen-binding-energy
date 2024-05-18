@@ -2,55 +2,51 @@
 model_params:
   block_size: 248    # 247 aa residues (max length of holdout set) + CLS token (if needed)
   vocab_size : 25    # 20 amino acids + special tokens (CLS, X, PAD, MASK, SEP)                 
-  num_heads: 8 
-  dim_head: 64
-  num_layers: 6
-  emb_dim: 256  
+  num_heads:   16 #8 
+  dim_head:    64
+  num_layers:  12 #6
+  emb_dim:    768 #256  
 
 train_params:
-
   # Either mask-language-model or regression
-  train_type: 'regression'  # 'mask_lang_model', 'regression'
+  train_type: 'mask_lang_model'  # 'mask_lang_model', 'regression'
 
   #---------------------------------------------------------------------------
   # settings specific to regression training
   #---------------------------------------------------------------------------
   loss_type:     'mse'  # 'mae', 'mse'  i.e. mean-avg-error, mean-squared-error
-  sequence_regularize: False #True
+  sequence_regularize: False 
   seq_mask_prob:  0.05 # regularization: probability of masking an amino acid 
                        # (this masks ~10-15 residues in seq of 242 if prob = 0.05)
 
-  freeze_base_model: False #True 
+  freeze_base_model: False 
 
   #---------------------------------------------------------------------------
   # setting specific to masked language training
   #---------------------------------------------------------------------------
-  mask_prob: 0 #0.15      # for pre-training in masked-language-modeling task
+  mask_prob: 0.40 #15      # for pre-training in masked-language-modeling task
 
   #---------------------------------------------------------------------------
   # general training settings
   #---------------------------------------------------------------------------
   tform_dropout: 0.10
   emb_dropout:   0.10
-  mlp_dropout:   0.20
+  mlp_dropout:   0.10
 
-  accelerator : 'mps'     # cpu, gpu, mps(macbook M2 chip)
-  devices: 1
-  precision: '32-true'  # '32-true', '16-mixed', 'bf16-mixed'
-  batch_size: 256
-  num_workers: 5
+  accelerator : 'gpu'      # cpu, gpu, mps(macbook M2 chip)
+  devices: 2
+  precision: 'bf16-mixed'  # '32-true', '16-mixed', 'bf16-mixed'
+  batch_size: 36
+  num_workers: 10
   grad_norm_clip : 1.0
-  num_epochs : 50        # for fine-tuning use smaller number of epochs, e.g. < 10
-  log_dir :        '../lightning_logs/tform_mlp_model/finetune/cleaned_3b_data/'  #pretrain/paired_1_set/'
-  train_data_path: '../data/q_cleaned_3b_train_set.csv'   #'../data/oas_2/paired/paired_1_train_set.csv'
-  val_data_path:   '../data/q_cleaned_3b_val_set.csv'   #'../data/oas_2/paired/paired_1_val_set.csv'
+  num_epochs : 1000        # for fine-tuning use smaller number of epochs, e.g. < 10
+  log_dir :        '../lightning_logs/tform_mlp_model/pretrain/big2/chain_id/paired_2_set/'
+  train_data_path: '../data/oas_2/paired/paired_2_train_set.csv'
+  val_data_path:   '../data/oas_2/paired/paired_2_val_set.csv'
 
-  # a. just regression head: checkpoint_name: '../lightning_logs/tform_mlp_model/pretrain/paired_1_set/version_1/checkpoints/epoch=130-step=44000-val_loss=0.34-loss=0.33.ckpt'
-  # b. first full model checkpoint_name: '../lightning_logs/tform_mlp_model/finetune/cleaned_3b_data/version_1/checkpoints/epoch=23-step=700-val_loss=0.49-loss=0.59.ckpt'
-  # c  second full model checkpoint_name: '../lightning_logs/tform_mlp_model/finetune/cleaned_3b_data/version_2/checkpoints/epoch=49-step=1500-val_loss=0.29-loss=0.38.ckpt'
-  checkpoint_name: '../lightning_logs/tform_mlp_model/finetune/cleaned_3b_data/version_3/checkpoints/epoch=49-step=1500-val_loss=0.23-loss=0.30.ckpt'
+  checkpoint_name: None
 
-  learning_rate : 0.00001  #0.0001  # for fine-tuning use 0.00001
+  learning_rate : 0.0001  # for fine-tuning use 0.00001
   lr_gamma: 0.9995        # for exponential learning rate decay
   betas : [0.9, 0.95]
   checkpoint_every_n_train_steps : 100
@@ -78,4 +74,3 @@ inference_params:
   inference_data_path: '../data/alphaseq_data_hold_out.csv'
 
 seed : 3407
-

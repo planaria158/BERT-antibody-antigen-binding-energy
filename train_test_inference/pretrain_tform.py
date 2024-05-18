@@ -87,7 +87,7 @@ def main():
 
     print('Using', train_config['accelerator'])
     print('Using precision:', train_config['precision'])
-    trainer = pl.Trainer(#strategy='ddp', 
+    trainer = pl.Trainer(strategy='ddp_find_unused_parameters_true', #'ddp', 
                          accelerator=train_config['accelerator'], 
                          devices=train_config['devices'],
                          max_epochs=train_config['num_epochs'],   

@@ -55,6 +55,7 @@ class TFormMLP(nn.Module):
         # old constant pos embedding..  self.pos_embedding = nn.Parameter(torch.randn(1, self.block_size, emb_dim))
         self.token_embedding = nn.Embedding(self.vocab_size, emb_dim) # token embedding
         self.pos_embedding   = nn.Embedding(self.block_size, emb_dim) # position embedding 
+        self.chain_embedding = nn.Embedding(5, emb_dim)               # chain embedding: '5' covers: CLS, heavy, light, linker, PAD
         self.emb_dropout = nn.Dropout(p=config['emb_dropout'])
         self.transformer = TransformerEncoder(model_config['num_layers'], emb_dim, model_config['num_heads'], 
                                               model_config['dim_head'], config['tform_dropout'])
@@ -92,14 +93,18 @@ class TFormMLP(nn.Module):
                 param.requires_grad = False
 
            
-    def forward(self, x, mask=None): 
+    def forward(self, x, chain_id=None, mask=None): 
         b, n = x.shape
         device = x.device
         assert n <= self.block_size, f"Cannot forward sequence of length {n}, block size is only {self.block_size}"
         pos = torch.arange(0, n, dtype=torch.long, device=device).unsqueeze(0) # shape (1, t) 
         tok_emb = self.token_embedding(x) # token embeddings of shape (b, n, n_embd)        
-        pos_emb = self.pos_embedding(pos) # position embeddings of shape (1, t, n_embd)
-        embeddings = tok_emb + pos_emb
+        pos_emb = self.pos_embedding(pos) # position embeddings of shape (1, n, n_embd)
+        embeddings = tok_emb + pos_emb 
+        if chain_id != None:
+             ch_emb  = self.chain_embedding(chain_id) # chain embeddings of shape (b, n, n_embd)
+             embeddings += ch_emb
+
         x = self.emb_dropout(embeddings)
         tform_out = self.transformer(x)
 
@@ -155,15 +160,15 @@ class TFormMLP_Lightning(LightningModule):
         self.train_type = config['train_type']
         self.save_hyperparameters()
 
-    def forward(self, x, mask=None):
-        return self.model(x, mask)
+    def forward(self, x, chain_id=None, mask=None):
+        return self.model(x, chain_id, mask)
 
     def common_forward(self, batch, batch_idx):
-        x, mask, y, names = batch
+        x, chain_id, mask, y, names = batch
 
         # Masked Language Model (MLM) mode
         if self.train_type == 'mask_lang_model':
-            y_hat, loss, tform_out = self.model(x, mask)     
+            y_hat, loss, tform_out = self.model(x, chain_id, mask)     
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.config['grad_norm_clip'])
         else:   
             # Regression mode

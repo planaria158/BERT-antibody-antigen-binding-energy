@@ -19,7 +19,7 @@ class FeedForwardBlock(nn.Module):
             dropout: float, dropout rate
             multiplier: int, multiplier for the inner dimension
     """
-    def __init__(self, dim, dropout=0., multiplier=4):
+    def __init__(self, dim, dropout=0., multiplier=6):  # 4):
         super().__init__()
         inner_dim = dim * multiplier
         self.block = nn.Sequential(
