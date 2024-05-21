@@ -33,8 +33,8 @@ train_params:
   emb_dropout:   0.10
   mlp_dropout:   0.10
 
-  accelerator : 'gpu'      # cpu, gpu, mps(macbook M2 chip)
-  devices: 2
+  accelerator : 'mps'      # cpu, gpu, mps(macbook M2 chip)
+  devices: 1
   precision: '16-mixed'    # '32-true', '16-mixed', 'bf16-mixed'
   batch_size: 36
   accumulate_grad_batches : 25
