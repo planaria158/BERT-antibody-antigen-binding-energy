@@ -24,7 +24,7 @@ train_params:
   #---------------------------------------------------------------------------
   # setting specific to masked language training
   #---------------------------------------------------------------------------
-  mask_prob: 0.40 #15      # for pre-training in masked-language-modeling task
+  mask_prob: 0.15      # for pre-training in masked-language-modeling task
 
   #---------------------------------------------------------------------------
   # general training settings
@@ -45,7 +45,7 @@ train_params:
   train_data_path: '../data/oas_2/paired/paired_2_train_set.csv'
   val_data_path:   '../data/oas_2/paired/paired_2_val_set.csv'
 
-  checkpoint_name: '../lightning_logs/tform_mlp_model/pretrain/big2/chain_id/paired_2_set/version_0/checkpoints/epoch=7-step=2500-val_loss=0.63-loss=0.57.ckpt'
+  checkpoint_name: '../lightning_logs/tform_mlp_model/pretrain/big2/chain_id/paired_2_set/version_1/checkpoints/epoch=148-step=19600-val_loss=0.40-loss=0.39.ckpt'
 
   learning_rate : 0.0001  # for fine-tuning use 0.00001
   lr_gamma: 0.9995        # for exponential learning rate decay
