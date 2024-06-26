@@ -1,7 +1,7 @@
 
 
 
-# A-Alpha Bio homework submitted by Mark Thompson. May 7, 2024
+#  A study in using BERT to calculater antibody-antigen binding  May 2024
 
 
 ## Overview:
