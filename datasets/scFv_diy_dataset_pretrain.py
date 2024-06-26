@@ -68,6 +68,10 @@ class scFv_diy_pretrain_Dataset(Dataset):
             chain_id = torch.cat((torch.tensor([self.stoi['CLS']], dtype=torch.long), chain_id))
           
         mask = torch.zeros_like(dix)
+        # NOTE: this next bit is incorrect.  I've fixed it in the dvm_transformer project
+        # I'll flag this with an assert statement and fix it later
+        assert (False), 'The mask creation is incorrect in this module.  The correct version is in the dvm_transformer project.  Please use that version.'
+
 
         # training will be masked language model
         if self.train_type == 'mask_lang_model':

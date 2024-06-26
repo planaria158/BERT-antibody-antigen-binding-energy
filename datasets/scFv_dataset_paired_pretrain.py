@@ -59,6 +59,9 @@ class scFv_paired_pretrain_Dataset(Dataset):
         if cls:
           dix = torch.cat((torch.tensor([self.stoi['CLS']], dtype=torch.long), dix))
           
+        # NOTE: this next bit is incorrect.  I've fixed it in the dvm_transformer project
+        # I'll flag this with an assert statement and fix it later
+        assert (False), 'The mask creation is incorrect in this module.  The correct version is in the dvm_transformer project.  Please use that version.'
         mask = torch.zeros_like(dix)
 
         # training will be masked language model
