@@ -114,6 +114,11 @@ class TFormMLP(nn.Module):
             mask = mask.view(-1)
             mask_idx = torch.nonzero(mask)
             loss = F.cross_entropy(logits.view(-1, self.vocab_size),  mask, reduction='none')
+
+            # NOTE: this is incorrect....  I've corrected it in the dvm_transformer project
+            # I'll fix and test this soon
+            assert(False), 'This is incorrect...  I need to fix it.  See dvm_transformer project for the fix.'
+
             loss = loss.sum() / mask_idx.shape[0]
         else:
             # else running in regression mode
